@@ -1,0 +1,2425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clonar Páginas Web con IA — Tutorial Interactivo</title>
+<style>
+/* ============================================================
+   RESET Y VARIABLES
+   ============================================================ */
+*{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:16px;scroll-behavior:smooth;-webkit-text-size-adjust:100%;}
+:root{
+  --bg:#0a0e1a;
+  --card:#0f172a;
+  --card2:#131c31;
+  --accent:#1e3a5f;
+  --bright:#38bdf8;
+  --text:#e2e8f0;
+  --dim:#94a3b8;
+  --border:#1e293b;
+  --code:#0b1220;
+  --ok:#22c55e;
+  --bad:#ef4444;
+  --warn:#f59e0b;
+  --shadow:0 10px 30px rgba(0,0,0,.45);
+}
+body.light{
+  --bg:#f1f5f9;
+  --card:#ffffff;
+  --card2:#f8fafc;
+  --accent:#1e3a5f;
+  --bright:#0369a1;
+  --text:#0f172a;
+  --dim:#475569;
+  --border:#dbe3ec;
+  --code:#eef2f7;
+  --shadow:0 10px 30px rgba(15,23,42,.10);
+}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  line-height:1.65;
+  transition:background .3s ease,color .3s ease;
+  padding-bottom:4rem;
+  overflow-x:hidden;
+}
+
+/* ============================================================
+   BARRA DE PROGRESO
+   ============================================================ */
+#progressWrap{
+  position:fixed;top:0;left:0;width:100%;height:4px;
+  background:transparent;z-index:9999;
+}
+#progressFill{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,var(--accent),var(--bright));
+  transition:width .1s linear;
+}
+
+/* ============================================================
+   BARRA SUPERIOR
+   ============================================================ */
+.topbar{
+  position:sticky;top:0;z-index:900;
+  background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  gap:.5rem;padding:.55rem .8rem;flex-wrap:wrap;
+}
+.brand{
+  display:flex;align-items:center;gap:.5rem;
+  font-weight:800;font-size:1rem;letter-spacing:.3px;
+}
+.brand .dot{
+  width:10px;height:10px;border-radius:50%;
+  background:var(--bright);
+  box-shadow:0 0 10px var(--bright);
+  animation:pulseDot 2s infinite;
+}
+@keyframes pulseDot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.45;transform:scale(.75);}}
+.tools{display:flex;gap:.35rem;flex-wrap:wrap;}
+.tools button{
+  background:var(--card);
+  color:var(--text);
+  border:1px solid var(--border);
+  border-radius:9px;
+  padding:.4rem .6rem;
+  font-size:.85rem;
+  font-weight:700;
+  cursor:pointer;
+  transition:.18s;
+  font-family:inherit;
+  min-width:38px;
+}
+.tools button:hover{background:var(--accent);border-color:var(--bright);color:#fff;}
+.tools button:active{transform:scale(.94);}
+
+/* ============================================================
+   BUSCADOR
+   ============================================================ */
+.searchWrap{
+  position:relative;
+  padding:.7rem .8rem 0;
+  max-width:1200px;margin:0 auto;
+}
+#searchInput{
+  width:100%;
+  padding:.75rem 1rem .75rem 2.6rem;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:var(--card);
+  color:var(--text);
+  font-size:.95rem;
+  font-family:inherit;
+  outline:none;
+  transition:.2s;
+}
+#searchInput:focus{border-color:var(--bright);box-shadow:0 0 0 3px color-mix(in srgb,var(--bright) 22%,transparent);}
+.searchIcon{
+  position:absolute;left:1.6rem;top:50%;transform:translateY(-30%);
+  font-size:1rem;opacity:.55;pointer-events:none;
+}
+#searchResults{
+  display:none;
+  margin-top:.5rem;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  max-height:340px;overflow-y:auto;
+  box-shadow:var(--shadow);
+}
+#searchResults.show{display:block;}
+.srItem{
+  padding:.7rem .9rem;
+  border-bottom:1px solid var(--border);
+  cursor:pointer;
+  transition:.15s;
+}
+.srItem:last-child{border-bottom:none;}
+.srItem:hover{background:var(--accent);}
+.srItem .srTab{
+  font-size:.68rem;font-weight:800;letter-spacing:1px;
+  color:var(--bright);text-transform:uppercase;
+}
+.srItem .srTxt{font-size:.86rem;color:var(--text);opacity:.9;}
+.srItem mark{background:var(--bright);color:#04121f;padding:0 2px;border-radius:3px;}
+.srEmpty{padding:.9rem;color:var(--dim);font-size:.88rem;}
+
+/* ============================================================
+   PESTAÑAS
+   ============================================================ */
+.tabs{
+  display:flex;
+  gap:.35rem;
+  overflow-x:auto;
+  padding:.8rem .8rem .2rem;
+  max-width:1200px;margin:0 auto;
+  scrollbar-width:none;
+}
+.tabs::-webkit-scrollbar{display:none;}
+.tabBtn{
+  flex:0 0 auto;
+  background:var(--card);
+  border:1px solid var(--border);
+  color:var(--dim);
+  border-radius:999px;
+  padding:.5rem 1rem;
+  font-size:.78rem;
+  font-weight:800;
+  letter-spacing:.6px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:.2s;
+  font-family:inherit;
+}
+.tabBtn:hover{color:var(--text);border-color:var(--bright);}
+.tabBtn.active{
+  background:var(--accent);
+  color:#fff;
+  border-color:var(--bright);
+  box-shadow:0 0 0 1px var(--bright),0 6px 18px color-mix(in srgb,var(--bright) 25%,transparent);
+}
+
+/* ============================================================
+   CONTENIDO
+   ============================================================ */
+main{max-width:1200px;margin:0 auto;padding:1rem .8rem 3rem;}
+.panel{display:none;animation:fadeIn .35s ease;}
+.panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+
+h1{font-size:1.75rem;line-height:1.25;margin:0 0 .5rem;font-weight:900;letter-spacing:-.5px;}
+h2{font-size:1.3rem;margin:1.8rem 0 .7rem;font-weight:800;letter-spacing:-.3px;
+   padding-bottom:.4rem;border-bottom:2px solid var(--accent);}
+h3{font-size:1.08rem;margin:1.3rem 0 .5rem;font-weight:800;color:var(--bright);}
+h4{font-size:.95rem;margin:1rem 0 .4rem;font-weight:800;}
+p{margin:.55rem 0;font-size:.95rem;}
+ul,ol{margin:.5rem 0 .5rem 1.2rem;font-size:.95rem;}
+li{margin:.3rem 0;}
+strong{font-weight:800;color:var(--text);}
+a{color:var(--bright);text-decoration:none;border-bottom:1px dotted var(--bright);}
+a:hover{opacity:.8;}
+
+.lead{font-size:1rem;color:var(--dim);margin-bottom:1rem;}
+
+/* Tarjetas */
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:1rem;
+  margin:.9rem 0;
+  box-shadow:var(--shadow);
+}
+.card.accent{border-left:4px solid var(--bright);}
+.card.ok{border-left:4px solid var(--ok);}
+.card.bad{border-left:4px solid var(--bad);}
+.card.warn{border-left:4px solid var(--warn);}
+
+.grid{display:grid;grid-template-columns:1fr;gap:.8rem;margin:.8rem 0;}
+@media(min-width:640px){.grid.two{grid-template-columns:1fr 1fr;}.grid.three{grid-template-columns:1fr 1fr 1fr;}}
+
+/* Badges */
+.badge{
+  display:inline-block;
+  font-size:.68rem;font-weight:800;letter-spacing:.8px;
+  padding:.2rem .6rem;border-radius:999px;
+  background:var(--accent);color:#fff;text-transform:uppercase;
+  margin-bottom:.4rem;
+}
+.badge.ok{background:var(--ok);color:#04210f;}
+.badge.bad{background:var(--bad);color:#fff;}
+.badge.warn{background:var(--warn);color:#3a2400;}
+
+/* Tablas */
+.tableWrap{overflow-x:auto;margin:.9rem 0;border-radius:12px;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:520px;background:var(--card);}
+th{background:var(--accent);color:#fff;text-align:left;padding:.7rem .8rem;font-weight:800;font-size:.8rem;letter-spacing:.4px;}
+td{padding:.65rem .8rem;border-top:1px solid var(--border);vertical-align:top;}
+tbody tr:nth-child(even){background:color-mix(in srgb,var(--card2) 70%,transparent);}
+
+/* Bloques de prompt */
+.promptBox{
+  background:var(--code);
+  border:1px solid var(--accent);
+  border-radius:14px;
+  margin:1rem 0;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.promptHead{
+  display:flex;align-items:center;justify-content:space-between;gap:.5rem;
+  padding:.55rem .8rem;
+  background:var(--accent);
+  color:#fff;font-size:.78rem;font-weight:800;letter-spacing:.5px;
+}
+.promptHead span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.copyBtn{
+  background:var(--bright);color:#04121f;
+  border:none;border-radius:8px;
+  padding:.5rem .8rem;font-size:.72rem;font-weight:900;letter-spacing:.6px;
+  cursor:pointer;font-family:inherit;transition:.18s;flex:0 0 auto;
+  min-height:34px;
+}
+.copyBtn:hover{filter:brightness(1.12);}
+.copyBtn:active{transform:scale(.94);}
+.copyBtn.done{background:var(--ok);color:#04210f;}
+.promptBody{
+  padding:.9rem;margin:0;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:.8rem;line-height:1.6;
+  color:var(--text);
+  white-space:pre-wrap;word-wrap:break-word;
+  overflow-x:auto;
+}
+
+/* Pasos */
+.steps{list-style:none;margin:1rem 0;padding:0;counter-reset:step;}
+.steps>li{
+  position:relative;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:.9rem .9rem .9rem 3.1rem;
+  margin:.7rem 0;
+  counter-increment:step;
+  transition:.2s;
+}
+.steps>li::before{
+  content:counter(step);
+  position:absolute;left:.75rem;top:.85rem;
+  width:1.65rem;height:1.65rem;border-radius:50%;
+  background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:.82rem;
+  border:2px solid var(--bright);
+}
+.steps>li:hover{border-color:var(--bright);}
+.steps>li .stepTitle{font-weight:800;display:block;margin-bottom:.15rem;font-size:.95rem;}
+
+/* Desplegables */
+details{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  margin:.6rem 0;
+  overflow:hidden;
+  transition:.2s;
+}
+details[open]{border-color:var(--bright);}
+summary{
+  cursor:pointer;
+  padding:.8rem 1rem;
+  font-weight:800;
+  font-size:.92rem;
+  list-style:none;
+  display:flex;align-items:center;justify-content:space-between;gap:.5rem;
+  transition:.15s;
+}
+summary::-webkit-details-marker{display:none;}
+summary::after{
+  content:"+";
+  font-size:1.2rem;font-weight:900;color:var(--bright);
+  transition:transform .25s;flex:0 0 auto;
+}
+details[open] summary::after{transform:rotate(45deg);}
+summary:hover{background:var(--accent);color:#fff;}
+summary:hover::after{color:#fff;}
+.detailsBody{padding:0 1rem 1rem;font-size:.92rem;}
+
+/* Diagrama de flujo */
+.flow{display:flex;flex-direction:column;align-items:center;gap:.35rem;margin:1.2rem 0;}
+.flowBox{
+  background:var(--card);
+  border:1px solid var(--accent);
+  border-radius:12px;
+  padding:.6rem .9rem;
+  font-size:.8rem;font-weight:700;text-align:center;
+  width:100%;max-width:340px;
+}
+.flowBox.hi{background:var(--accent);color:#fff;border-color:var(--bright);}
+.flowArrow{color:var(--bright);font-size:1.1rem;font-weight:900;line-height:1;}
+
+/* Checklist */
+.checkItem{
+  display:flex;align-items:flex-start;gap:.7rem;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:.75rem .9rem;
+  margin:.5rem 0;
+  cursor:pointer;
+  transition:.2s;
+}
+.checkItem:hover{border-color:var(--bright);}
+.checkItem.done{background:color-mix(in srgb,var(--ok) 14%,var(--card));border-color:var(--ok);}
+.checkItem input{
+  width:20px;height:20px;accent-color:var(--ok);
+  cursor:pointer;flex:0 0 auto;margin-top:.15rem;
+}
+.checkItem label{cursor:pointer;font-size:.9rem;flex:1;}
+.checkItem.done label{text-decoration:line-through;opacity:.7;}
+
+.progressText{
+  font-size:.82rem;color:var(--dim);
+  font-weight:700;margin:.6rem 0 1rem;
+  display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
+}
+.miniBar{flex:1;min-width:120px;height:8px;background:var(--border);border-radius:999px;overflow:hidden;}
+.miniBarFill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--ok));transition:width .3s;}
+
+/* Botones generales */
+.btn{
+  display:inline-block;
+  background:var(--accent);color:#fff;
+  border:1px solid var(--bright);
+  border-radius:10px;
+  padding:.5rem .9rem;
+  font-size:.82rem;font-weight:800;letter-spacing:.4px;
+  cursor:pointer;font-family:inherit;transition:.18s;
+  text-decoration:none;border-bottom:1px solid var(--bright);
+}
+.btn:hover{background:var(--bright);color:#04121f;}
+
+/* Resaltado de búsqueda */
+.searchHit{
+  animation:hitFlash 2s ease;
+  border-radius:6px;
+}
+@keyframes hitFlash{
+  0%{background:var(--bright);color:#04121f;}
+  70%{background:var(--bright);color:#04121f;}
+  100%{background:transparent;color:inherit;}
+}
+
+/* Botón volver arriba */
+#backTop{
+  position:fixed;right:1rem;bottom:1rem;
+  width:46px;height:46px;border-radius:50%;
+  background:var(--accent);color:#fff;
+  border:2px solid var(--bright);
+  font-size:1.2rem;font-weight:900;
+  cursor:pointer;display:none;
+  align-items:center;justify-content:center;
+  z-index:800;transition:.2s;
+  box-shadow:var(--shadow);
+}
+#backTop.show{display:flex;}
+#backTop:hover{background:var(--bright);color:#04121f;transform:translateY(-3px);}
+
+/* SVG hero */
+.heroSvgWrap{
+  background:linear-gradient(160deg,var(--card),var(--bg));
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:.6rem;
+  margin-bottom:1rem;
+  box-shadow:var(--shadow);
+}
+.heroSvgWrap svg{display:block;width:100%;height:auto;}
+
+/* Créditos */
+.creditName{
+  font-size:clamp(2rem,9vw,3.4rem);
+  font-weight:900;
+  letter-spacing:-1.5px;
+  line-height:1.05;
+  background:linear-gradient(100deg,var(--bright),#a78bfa,var(--bright));
+  background-size:220% auto;
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  animation:shine 5s linear infinite;
+  margin:.4rem 0;
+  word-break:break-word;
+}
+@keyframes shine{to{background-position:220% center;}}
+.creditRole{font-size:1.05rem;color:var(--dim);font-weight:700;letter-spacing:.5px;}
+.clockBox{
+  display:inline-block;
+  background:var(--code);
+  border:1px solid var(--accent);
+  border-radius:12px;
+  padding:.7rem 1.1rem;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:.95rem;font-weight:700;
+  color:var(--bright);
+  margin-top:1rem;
+  letter-spacing:.5px;
+}
+
+/* ============================================================
+   PROMPTS · ÍNDICE Y TARJETAS
+   ============================================================ */
+.promptIndex{
+  list-style:none;
+  margin:.6rem 0 0;
+  padding:0;
+}
+.promptIndex li{margin:.4rem 0;}
+.promptIndex a{
+  display:flex;
+  align-items:center;
+  gap:.5rem;
+  background:var(--card2);
+  border:1px solid var(--border);
+  border-left:4px solid var(--bright);
+  border-radius:10px;
+  padding:.7rem .9rem;
+  color:var(--text);
+  font-weight:700;
+  font-size:.9rem;
+  text-decoration:none;
+  border-bottom:1px solid var(--border);
+  transition:.2s;
+  min-height:44px;
+  line-height:1.35;
+}
+.promptIndex a::before{
+  content:"→";
+  color:var(--bright);
+  font-weight:900;
+  flex:0 0 auto;
+}
+.promptIndex a:hover{
+  background:var(--accent);
+  color:#fff;
+  transform:translateX(3px);
+}
+.promptIndex a:hover::before{color:#fff;}
+
+.promptCard{
+  scroll-margin-top:90px;
+}
+.promptCard .promptTitle{
+  font-size:1.08rem;
+  margin:.2rem 0 .5rem;
+  color:var(--bright);
+  font-weight:800;
+  letter-spacing:-.2px;
+}
+.promptMeta{
+  margin:.4rem 0 .8rem;
+  font-size:.9rem;
+}
+.promptMeta p{margin:.35rem 0;font-size:.9rem;line-height:1.55;}
+.promptMeta .metaLabel{
+  display:inline-block;
+  font-size:.68rem;
+  font-weight:800;
+  letter-spacing:.8px;
+  color:var(--bright);
+  text-transform:uppercase;
+  margin-right:.35rem;
+}
+
+/* Footer */
+footer{
+  text-align:center;
+  padding:2rem 1rem 1rem;
+  color:var(--dim);
+  font-size:.8rem;
+  border-top:1px solid var(--border);
+  margin-top:2rem;
+}
+
+/* Impresión */
+@media print{
+  .topbar,.tabs,#backTop,#progressWrap,.searchWrap,.tools,#searchResults{display:none!important;}
+  .panel{display:block!important;page-break-before:always;}
+  .panel:first-of-type{page-break-before:auto;}
+  body{background:#fff;color:#000;}
+  .card,.promptBox,details{border:1px solid #999;box-shadow:none;}
+  .promptBody{white-space:pre-wrap;}
+}
+</style>
+</head>
+<body>
+
+<div id="progressWrap"><div id="progressFill"></div></div>
+
+<header class="topbar">
+  <div class="brand"><span class="dot"></span> CLONAR WEB CON IA</div>
+  <div class="tools">
+    <button id="themeBtn" title="Cambiar tema">🌙</button>
+    <button id="fontMinus" title="Reducir texto">A−</button>
+    <button id="fontPlus" title="Aumentar texto">A+</button>
+    <button id="printBtn" title="Imprimir / PDF">🖨</button>
+  </div>
+</header>
+
+<div class="searchWrap">
+  <span class="searchIcon">🔍</span>
+  <input type="text" id="searchInput" placeholder="Buscar en el tutorial (ej. index.html, FSE, prompt)…" autocomplete="off">
+  <div id="searchResults"></div>
+</div>
+
+<nav class="tabs" id="tabs">
+  <button class="tabBtn active" data-tab="inicio">INICIO</button>
+  <button class="tabBtn" data-tab="conceptos">CONCEPTOS</button>
+  <button class="tabBtn" data-tab="procedimiento">PROCEDIMIENTO</button>
+  <button class="tabBtn" data-tab="practica">PRÁCTICA</button>
+  <button class="tabBtn" data-tab="errores">ERRORES</button>
+  <button class="tabBtn" data-tab="resumen">RESUMEN</button>
+  <button class="tabBtn" data-tab="fuentes">FUENTES</button>
+  <button class="tabBtn" data-tab="prompts">PROMPTS</button>
+  <button class="tabBtn" data-tab="creditos">CRÉDITOS</button>
+</nav>
+
+<main>
+
+<!-- ============================================================
+     INICIO
+     ============================================================ -->
+<section class="panel active" id="inicio">
+
+  <div class="heroSvgWrap">
+    <svg viewBox="0 0 900 340" role="img" aria-label="Animación: una captura de pantalla es analizada por una IA y convertida en una web nueva">
+      <defs>
+        <linearGradient id="gA" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#38bdf8"/>
+          <stop offset="100%" stop-color="#a78bfa"/>
+        </linearGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- Navegador origen -->
+      <g>
+        <rect x="20" y="42" width="240" height="256" rx="12" fill="#0f172a" stroke="#1e3a5f" stroke-width="2"/>
+        <rect x="20" y="42" width="240" height="28" rx="12" fill="#1e3a5f"/>
+        <rect x="20" y="58" width="240" height="12" fill="#1e3a5f"/>
+        <circle cx="38" cy="56" r="4" fill="#ef4444"/>
+        <circle cx="52" cy="56" r="4" fill="#f59e0b"/>
+        <circle cx="66" cy="56" r="4" fill="#22c55e"/>
+
+        <rect x="36" y="84" width="208" height="52" rx="7" fill="#1e3a5f" opacity="0.75"/>
+        <rect x="36" y="148" width="62" height="46" rx="6" fill="#1e3a5f" opacity="0.5"/>
+        <rect x="109" y="148" width="62" height="46" rx="6" fill="#1e3a5f" opacity="0.5"/>
+        <rect x="182" y="148" width="62" height="46" rx="6" fill="#1e3a5f" opacity="0.5"/>
+        <rect x="36" y="206" width="208" height="9" rx="4.5" fill="#334155"/>
+        <rect x="36" y="222" width="150" height="9" rx="4.5" fill="#334155"/>
+        <rect x="36" y="246" width="86" height="24" rx="12" fill="#3b82f6"/>
+
+        <!-- Línea de escaneo -->
+        <rect x="24" y="70" width="232" height="3" fill="#38bdf8" filter="url(#glow)" opacity="0.9">
+          <animate attributeName="y" values="70;292;70" dur="4.5s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.15;1;1;0.15" dur="4.5s" repeatCount="indefinite"/>
+        </rect>
+      </g>
+
+      <!-- Flujo de datos hacia la IA -->
+      <g>
+        <circle r="5" fill="#38bdf8" filter="url(#glow)">
+          <animate attributeName="cx" values="272;368" dur="1.5s" repeatCount="indefinite"/>
+          <animate attributeName="cy" values="150;168" dur="1.5s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0;1;0" dur="1.5s" repeatCount="indefinite"/>
+        </circle>
+        <circle r="5" fill="#a78bfa" filter="url(#glow)">
+          <animate attributeName="cx" values="272;368" dur="1.5s" begin="0.5s" repeatCount="indefinite"/>
+          <animate attributeName="cy" values="178;170" dur="1.5s" begin="0.5s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0;1;0" dur="1.5s" begin="0.5s" repeatCount="indefinite"/>
+        </circle>
+        <circle r="5" fill="#38bdf8" filter="url(#glow)">
+          <animate attributeName="cx" values="272;368" dur="1.5s" begin="1s" repeatCount="indefinite"/>
+          <animate attributeName="cy" values="205;175" dur="1.5s" begin="1s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0;1;0" dur="1.5s" begin="1s" repeatCount="indefinite"/>
+        </circle>
+      </g>
+
+      <!-- Chip IA -->
+      <g>
+        <circle cx="450" cy="170" r="72" fill="none" stroke="#38bdf8" stroke-width="1.5">
+          <animate attributeName="r" values="62;100;62" dur="3s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.55;0;0.55" dur="3s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="450" cy="170" r="72" fill="none" stroke="#a78bfa" stroke-width="1.5">
+          <animate attributeName="r" values="62;100;62" dur="3s" begin="1.5s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.55;0;0.55" dur="3s" begin="1.5s" repeatCount="indefinite"/>
+        </circle>
+        <rect x="392" y="112" width="116" height="116" rx="20" fill="#0f172a" stroke="url(#gA)" stroke-width="2.5">
+          <animate attributeName="stroke-opacity" values="0.55;1;0.55" dur="2.4s" repeatCount="indefinite"/>
+        </rect>
+        <text x="450" y="186" text-anchor="middle" font-size="38" font-weight="900" fill="#38bdf8" font-family="system-ui,sans-serif">IA</text>
+        <text x="450" y="255" text-anchor="middle" font-size="13" font-weight="800" fill="#94a3b8" letter-spacing="2" font-family="system-ui,sans-serif">VISIÓN + CÓDIGO</text>
+      </g>
+
+      <!-- Flujo hacia la web destino -->
+      <g>
+        <circle r="5" fill="#22c55e" filter="url(#glow)">
+          <animate attributeName="cx" values="532;628" dur="1.5s" repeatCount="indefinite"/>
+          <animate attributeName="cy" values="160;150" dur="1.5s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0;1;0" dur="1.5s" repeatCount="indefinite"/>
+        </circle>
+        <circle r="5" fill="#38bdf8" filter="url(#glow)">
+          <animate attributeName="cx" values="532;628" dur="1.5s" begin="0.5s" repeatCount="indefinite"/>
+          <animate attributeName="cy" values="175;180" dur="1.5s" begin="0.5s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0;1;0" dur="1.5s" begin="0.5s" repeatCount="indefinite"/>
+        </circle>
+        <circle r="5" fill="#a78bfa" filter="url(#glow)">
+          <animate attributeName="cx" values="532;628" dur="1.5s" begin="1s" repeatCount="indefinite"/>
+          <animate attributeName="cy" values="192;205" dur="1.5s" begin="1s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0;1;0" dur="1.5s" begin="1s" repeatCount="indefinite"/>
+        </circle>
+      </g>
+
+      <!-- Navegador destino que se va construyendo -->
+      <g>
+        <rect x="640" y="42" width="240" height="256" rx="12" fill="#0f172a" stroke="#22c55e" stroke-width="2"/>
+        <rect x="640" y="42" width="240" height="28" rx="12" fill="#1e3a5f"/>
+        <rect x="640" y="58" width="240" height="12" fill="#1e3a5f"/>
+        <circle cx="658" cy="56" r="4" fill="#ef4444"/>
+        <circle cx="672" cy="56" r="4" fill="#f59e0b"/>
+        <circle cx="686" cy="56" r="4" fill="#22c55e"/>
+
+        <rect x="656" y="84" width="208" height="52" rx="7" fill="#38bdf8">
+          <animate attributeName="opacity" values="0;0;0.85;0.85;0" dur="4.5s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="656" y="148" width="62" height="46" rx="6" fill="#22c55e">
+          <animate attributeName="opacity" values="0;0;0;0.7;0.7;0" dur="4.5s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="729" y="148" width="62" height="46" rx="6" fill="#22c55e">
+          <animate attributeName="opacity" values="0;0;0;0;0.7;0.7;0" dur="4.5s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="802" y="148" width="62" height="46" rx="6" fill="#22c55e">
+          <animate attributeName="opacity" values="0;0;0;0;0;0.7;0.7;0" dur="4.5s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="656" y="206" width="208" height="9" rx="4.5" fill="#475569">
+          <animate attributeName="opacity" values="0;0;0;0;0;0.9;0.9;0" dur="4.5s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="656" y="222" width="150" height="9" rx="4.5" fill="#475569">
+          <animate attributeName="opacity" values="0;0;0;0;0;0;0.9;0.9;0" dur="4.5s" repeatCount="indefinite"/>
+        </rect>
+        <rect x="656" y="246" width="86" height="24" rx="12" fill="#3b82f6">
+          <animate attributeName="opacity" values="0;0;0;0;0;0;0;0.95;0.95;0" dur="4.5s" repeatCount="indefinite"/>
+        </rect>
+      </g>
+
+      <!-- Símbolos de código flotantes -->
+      <text x="600" y="90" font-size="18" font-weight="900" fill="#38bdf8" opacity="0.85" font-family="monospace">&lt;/&gt;
+        <animate attributeName="y" values="95;78;95" dur="3s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.3;1;0.3" dur="3s" repeatCount="indefinite"/>
+      </text>
+      <text x="300" y="300" font-size="16" font-weight="900" fill="#a78bfa" opacity="0.8" font-family="monospace">{ }
+        <animate attributeName="y" values="305;288;305" dur="3.4s" repeatCount="indefinite"/>
+      </text>
+      <text x="450" y="45" text-anchor="middle" font-size="12" font-weight="800" fill="#64748b" letter-spacing="3" font-family="system-ui,sans-serif">CAPTURA → IA → CÓDIGO</text>
+    </svg>
+  </div>
+
+  <h1>Clonar Páginas Web con IA</h1>
+  <p class="lead">Tutorial interactivo para principiantes · 3 métodos paso a paso · Sin saber programar</p>
+
+  <div class="card accent">
+    <span class="badge">¿QUÉ VAS A APRENDER?</span>
+    <p>A tomar la <strong>estructura visual, los colores y la tipografía</strong> de cualquier página web que te guste —a partir de una simple captura de pantalla— y convertirla en <strong>tu propia web funcional</strong> usando inteligencia artificial.</p>
+    <p>Aprenderás tres caminos distintos, desde el más rápido hasta el más profesional, y sabrás <strong>cuál elegir en cada situación</strong>.</p>
+  </div>
+
+  <h2>¿Para qué sirve esto?</h2>
+  <div class="grid three">
+    <div class="card">
+      <span class="badge">1</span>
+      <h4>Superar el lienzo en blanco</h4>
+      <p>Empiezas con una estructura profesional ya resuelta, en lugar de mirar una pantalla vacía sin saber por dónde empezar.</p>
+    </div>
+    <div class="card">
+      <span class="badge">2</span>
+      <h4>Acelerar el prototipado</h4>
+      <p>Creas maquetas web funcionales en minutos para validar una idea o presentar una propuesta a un cliente.</p>
+    </div>
+    <div class="card">
+      <span class="badge">3</span>
+      <h4>Personalizar con tu contenido</h4>
+      <p>Extraes únicamente el molde visual y sustituyes textos, marcas e imágenes por los de tu propio negocio.</p>
+    </div>
+  </div>
+
+  <h2>¿Qué necesitas antes de empezar?</h2>
+  <div class="card">
+    <ul>
+      <li><strong>Una computadora</strong> con navegador Google Chrome (recomendado).</li>
+      <li><strong>Una cuenta en Claude</strong> (<code>claude.ai</code>) — sirve la versión gratuita o el plan Pro.</li>
+      <li><strong>Una cuenta de hosting</strong> en Hostinger (o similar) para publicar el resultado.</li>
+      <li><strong>Una captura de pantalla completa</strong> de la web que quieras tomar como referencia.</li>
+      <li><strong>Ganas de practicar.</strong> No necesitas saber programar: el tutorial asume cero conocimientos técnicos.</li>
+    </ul>
+  </div>
+
+  <h2>Objetivos del tutorial</h2>
+  <div class="card ok">
+    <ol>
+      <li>Entender qué es la clonación web con IA y su límite ético.</li>
+      <li>Preparar correctamente el entorno y la captura de pantalla.</li>
+      <li>Dominar el <strong>Prompt General Molde</strong> y adaptarlo a cualquier negocio.</li>
+      <li>Ejecutar los <strong>3 métodos</strong> completos, de principio a fin.</li>
+      <li>Elegir el método adecuado según tu proyecto.</li>
+      <li>Evitar los errores más frecuentes que arruinan el resultado.</li>
+    </ol>
+  </div>
+
+  <h2>Cómo utilizar este tutorial</h2>
+  <div class="grid two">
+    <div class="card">
+      <h4>🧭 Navega con las pestañas</h4>
+      <p>Usa la barra de pestañas superior. Cada una cubre una etapa: conceptos, procedimiento, práctica, errores, resumen, fuentes, prompts y créditos.</p>
+    </div>
+    <div class="card">
+      <h4>🔍 Busca lo que necesites</h4>
+      <p>El buscador de arriba recorre todo el tutorial. Escribe una palabra (por ejemplo <em>index.html</em>) y pulsa un resultado para saltar directamente a esa parte.</p>
+    </div>
+    <div class="card">
+      <h4>📋 Copia los prompts</h4>
+      <p>Cada bloque de prompt tiene un botón <strong>COPIAR</strong>. Úsalo para llevarte el texto exacto a Claude o a Hostinger sin errores de transcripción.</p>
+    </div>
+    <div class="card">
+      <h4>✅ Marca tu progreso</h4>
+      <p>En la pestaña <strong>PRÁCTICA</strong> hay una lista de comprobación. Tu avance se guarda automáticamente en el navegador.</p>
+    </div>
+  </div>
+
+  <div class="card warn">
+    <span class="badge warn">AVISO IMPORTANTE</span>
+    <p>Este tutorial enseña a <strong>inspirarse éticamente</strong> en un diseño. <strong>Nunca</strong> debes copiar textos con derechos de autor, logotipos, marcas registradas ni fotografías de terceros. En el capítulo de CONCEPTOS se explica con detalle.</p>
+  </div>
+
+</section>
+
+<!-- ============================================================
+     CONCEPTOS
+     ============================================================ -->
+<section class="panel" id="conceptos">
+
+  <h1>Conceptos Fundamentales</h1>
+  <p class="lead">Antes de tocar ninguna herramienta, entendamos qué estamos haciendo y por qué.</p>
+
+  <h2>1. ¿Qué es la clonación de páginas web con IA?</h2>
+  <div class="card accent">
+    <p>La <strong>clonación de páginas web asistida por Inteligencia Artificial</strong> consiste en tomar la estructura visual, la disposición de elementos, la paleta de colores y el estilo tipográfico de un sitio web de referencia, y recrearlo automáticamente mediante modelos de IA con capacidad de <strong>visión por computadora</strong> y <strong>generación de código</strong>.</p>
+  </div>
+
+  <h3>¿Cómo funciona, en palabras simples?</h3>
+  <div class="flow">
+    <div class="flowBox">📸 <strong>Captura de pantalla completa</strong><br><small>de la página que te inspira</small></div>
+    <div class="flowArrow">▼</div>
+    <div class="flowBox">✍️ <strong>Prompt estructurado</strong><br><small>con los datos de tu negocio</small></div>
+    <div class="flowArrow">▼</div>
+    <div class="flowBox hi">🧠 <strong>IA con visión</strong><br><small>interpreta la jerarquía visual</small></div>
+    <div class="flowArrow">▼</div>
+    <div class="flowBox">💻 <strong>HTML, tema de WordPress o web publicada</strong><br><small>sin que tengas que programar</small></div>
+  </div>
+
+  <details>
+    <summary>🔎 Analogía: la IA como un «traductor de diseños»</summary>
+    <div class="detailsBody">
+      <p>Imagina que le muestras a un arquitecto la foto de una casa y le pides que dibuje los planos. El arquitecto no copia los muebles ni el nombre de la familia que vive allí: solo traduce <em>la forma del espacio</em> a un plano que tú puedes construir con tus propios materiales.</p>
+      <p>La IA hace lo mismo: mira la captura y traduce <strong>la estructura</strong> a código. Tú pones el contenido.</p>
+    </div>
+  </details>
+
+  <h2>2. ¿Por qué es importante aprender esta metodología?</h2>
+  <p>Tradicionalmente, recrear la maqueta visual de un sitio web requería semanas de trabajo entre diseñadores UI/UX y desarrolladores front-end.</p>
+  <div class="grid three">
+    <div class="card">
+      <span class="badge">1</span>
+      <h4>Ahorra tiempo y costos</h4>
+      <p>Reduce de días a minutos el proceso de maquetación inicial.</p>
+    </div>
+    <div class="card">
+      <span class="badge">2</span>
+      <h4>Democratiza el diseño</h4>
+      <p>Cualquier persona sin experiencia en programación o CSS puede lanzar un sitio atractivo y moderno.</p>
+    </div>
+    <div class="card">
+      <span class="badge">3</span>
+      <h4>Control total</h4>
+      <p>Obtienes un punto de partida editable: cambias textos, colores y fotos a tu gusto.</p>
+    </div>
+  </div>
+
+  <h2>3. Situaciones reales de aplicación</h2>
+  <div class="grid three">
+    <div class="card">
+      <h4>👔 Freelancers y agencias</h4>
+      <p>Presentar maquetas funcionales a un cliente potencial en la primera reunión.</p>
+    </div>
+    <div class="card">
+      <h4>🚀 Emprendedores y Startups</h4>
+      <p>Lanzar un Producto Mínimo Viable (MVP) para validar una oferta de mercado en cuestión de horas.</p>
+    </div>
+    <div class="card">
+      <h4>🎨 Proyectos personales</h4>
+      <p>Crear portafolios, páginas de aterrizaje o blogs inspirados en referentes de la industria.</p>
+    </div>
+  </div>
+
+  <h2>4. El principio ético insoslayable: «Inspírate, no copies»</h2>
+  <div class="card warn">
+    <p>Existe una diferencia fundamental entre <strong>inspirarse</strong> en el diseño de un sitio y cometer <strong>plagio</strong>. Esta línea no es negociable.</p>
+  </div>
+
+  <div class="grid two">
+    <div class="card ok">
+      <span class="badge ok">✔ SÍ DEBES CLONAR</span>
+      <ul>
+        <li>La disposición de las columnas.</li>
+        <li>La jerarquía de los encabezados.</li>
+        <li>La combinación armoniosa de colores.</li>
+        <li>La estructura de navegación.</li>
+      </ul>
+    </div>
+    <div class="card bad">
+      <span class="badge bad">✘ NUNCA DEBES CLONAR</span>
+      <ul>
+        <li>Textos con derechos de autor.</li>
+        <li>Logotipos comerciales y marcas registradas.</li>
+        <li>Nombres de productos.</li>
+        <li>Fotografías propiedad de terceros.</li>
+      </ul>
+    </div>
+  </div>
+
+  <details>
+    <summary>🏠 Analogía cotidiana: la casa de exhibición</summary>
+    <div class="detailsBody">
+      <p>Clonar una web con IA es como inspirarte en <strong>la distribución de las habitaciones y la pintura</strong> de una casa de exhibición para construir la tuya.</p>
+      <p>Copias la arquitectura y el flujo del espacio, pero <strong>la amueblas con tus propios bienes</strong> y le pones <strong>tu propio nombre en la puerta</strong>.</p>
+    </div>
+  </details>
+
+  <h3>Tabla comparativa: ejemplo correcto vs. incorrecto</h3>
+  <div class="tableWrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Aspecto</th>
+          <th>Uso Correcto (Inspiración Ética)</th>
+          <th>Uso Incorrecto (Plagio)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Estructura</strong></td>
+          <td>Replicar la grilla de 3 tarjetas de servicios y la sección de héroe.</td>
+          <td>Copiar el código fuente exacto y los identificadores de marca.</td>
+        </tr>
+        <tr>
+          <td><strong>Texto</strong></td>
+          <td>Redactar descripciones originales ajustadas a tu empresa.</td>
+          <td>Copiar y pegar las biografías, misiones o testimonios del sitio original.</td>
+        </tr>
+        <tr>
+          <td><strong>Imágenes</strong></td>
+          <td>Utilizar placeholders de imágenes o fotos propias/de stock.</td>
+          <td>Descargar y publicar los logotipos o imágenes registradas del competidor.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card accent">
+    <span class="badge">RESUMEN DEL BLOQUE</span>
+    <p>La clonación web con IA utiliza la visión multimodal para transformar capturas de pantalla en código web o plantillas editables. Su objetivo es dotarte de <strong>un molde visual profesional</strong> para que construyas tu propio sitio de forma rápida, ética y personalizada, sin copiar contenido protegido.</p>
+  </div>
+
+</section>
+
+<!-- ============================================================
+     PROCEDIMIENTO
+     ============================================================ -->
+<section class="panel" id="procedimiento">
+
+  <h1>Procedimiento Completo</h1>
+  <p class="lead">Desde la preparación del entorno hasta la publicación de tu web. Sigue los pasos en orden.</p>
+
+  <!-- ===================== CAPÍTULO A ===================== -->
+  <h2>A. Preparación del entorno</h2>
+
+  <h3>A.1 La regla de oro: «La captura es la mitad del prompt»</h3>
+  <div class="card accent">
+    <p>La inteligencia artificial <strong>solo puede replicar lo que alcanza a ver</strong>. Si le proporcionas una captura recortada, borrosa o parcial, la IA inventará las secciones faltantes o devolverá un resultado incompleto.</p>
+  </div>
+
+  <h4>Paso a paso para obtener la captura perfecta</h4>
+  <ol class="steps">
+    <li>
+      <span class="stepTitle">Abre Google Chrome</span>
+      Ábrelo en tu computadora (no en el móvil).
+      <br><small><em>Motivo:</em> las extensiones de captura completa funcionan mejor en escritorio.</small>
+    </li>
+    <li>
+      <span class="stepTitle">Instala una extensión de captura de página completa</span>
+      Busca en la tienda de Chrome <strong>«Full Page Screen Capture»</strong> (icono de cámara fotográfica) e instálala.
+    </li>
+    <li>
+      <span class="stepTitle">Ve a la página web de referencia</span>
+      Escríbela en la barra de direcciones y espera a que carguen <strong>todos</strong> los elementos gráficos.
+      <br><small><em>Resultado esperado:</em> no quedan imágenes «grises» ni bloques vacíos.</small>
+    </li>
+    <li>
+      <span class="stepTitle">Haz clic en el icono de la extensión</span>
+      La herramienta realizará un desplazamiento automático (scroll) desde el encabezado hasta el pie de página.
+    </li>
+    <li>
+      <span class="stepTitle">Guarda la imagen resultante</span>
+      Elige formato de alta resolución (<strong>PNG</strong> o <strong>JPEG</strong>) y guárdala en tu equipo.
+    </li>
+  </ol>
+
+  <div class="card bad">
+    <span class="badge bad">SI ALGO SALE MAL</span>
+    <ul>
+      <li><strong>La captura sale cortada:</strong> la página usa «scroll infinito». Baja manualmente hasta el final antes de capturar.</li>
+      <li><strong>Sale borrosa:</strong> aumenta el zoom del navegador al 100 % y vuelve a capturar.</li>
+      <li><strong>Faltan imágenes:</strong> espera unos segundos más antes de disparar la captura.</li>
+    </ul>
+  </div>
+
+  <!-- ===================== PROMPT MOLDE ===================== -->
+  <h3>A.2 El Prompt General Molde</h3>
+  <p>Este es el prompt base que debes usar cuando quieras que la IA tome <strong>la estructura visual</strong> de la captura pero genere <strong>los textos y la identidad de tu propia empresa</strong>.</p>
+
+  <div class="promptBox">
+    <div class="promptHead">
+      <span>PROMPT GENERAL MOLDE</span>
+      <button class="copyBtn" data-copy>COPIAR</button>
+    </div>
+    <pre class="promptBody">Quiero que repliques el diseño de la imagen que te acabo de subir lo más
+fielmente posible: la estructura de las secciones, el estilo visual, la paleta de
+colores y la tipografía. Tómala como referencia visual exacta.
+
+Todo el contenido debe estar en español.
+
+El sitio es para: [tipo de negocio — ej. un estudio de diseño gráfico]
+Nombre: [nombre del negocio]
+Qué ofrece: [1-2 líneas]
+
+Usa el mismo acomodo de secciones que ves en la imagen, pero con contenido propio de este negocio — no copies el texto de la imagen, solo el diseño.
+
+RESTRICCIONES:
+- No inventes premios, certificaciones ni cifras que no te di
+- No agregues secciones que no aparezcan en la imagen de referencia
+- No construyas funcionalidades interactivas todavía, eso lo pido después</pre>
+  </div>
+
+  <details>
+    <summary>🧩 Explicación de los bloques del prompt</summary>
+    <div class="detailsBody">
+      <p><strong>«Incapacidad de invención» (Restricciones):</strong> evita que la IA agregue testimonios falsos, premios inventados o elementos interactivos complejos que entorpezcan el diseño inicial.</p>
+      <p><strong>Campos entre corchetes <code>[...]</code>:</strong> es la información contextual que debes reemplazar obligatoriamente antes de enviar el mensaje.</p>
+      <p><strong>«No copies el texto de la imagen, solo el diseño»:</strong> esta frase es tu salvaguarda ética y legal. Mantenla siempre.</p>
+    </div>
+  </details>
+
+  <h4>Lista de comprobación antes de enviar tu prompt</h4>
+  <div class="card">
+    <ul>
+      <li>☐ ¿La captura de pantalla abarca desde el menú superior hasta el footer?</li>
+      <li>☐ ¿La imagen tiene buena nitidez y no está deformada?</li>
+      <li>☐ ¿Rellenaste todos los campos entre corchetes con la información de tu negocio?</li>
+      <li>☐ ¿Seleccionaste un modelo de IA con capacidades de visión avanzada?</li>
+    </ul>
+  </div>
+
+  <div class="card accent">
+    <span class="badge">RESUMEN DEL BLOQUE</span>
+    <p>Obtener una captura de pantalla vertical completa es un requisito indispensable para garantizar la fidelidad del clon. El <strong>Prompt General Molde</strong> combina la referencia visual con tus datos de negocio y añade restricciones explícitas para evitar que la IA invente información.</p>
+  </div>
+
+  <!-- ===================== MÉTODO 1 ===================== -->
+  <h2>B. Método 1 · Clonar en HTML con Claude Design y Hostinger</h2>
+
+  <div class="card accent">
+    <span class="badge">¿EN QUÉ CONSISTE?</span>
+    <p>Utiliza <strong>Claude Design</strong> (dentro de <code>claude.ai/design</code>) para interpretar la captura de pantalla y generar un prototipo interactivo en código <strong>HTML y CSS puro</strong>. Es la vía más rápida para verificar la precisión visual del diseño.</p>
+    <p><strong>Ideal para:</strong> demos ultrarrápidas, validar el aspecto visual con un cliente antes de invertir más tiempo.</p>
+  </div>
+
+  <h4>Paso a paso</h4>
+  <ol class="steps">
+    <li>
+      <span class="stepTitle">Entra a Claude Design</span>
+      Abre <code>claude.ai/design</code> con tu cuenta registrada (versión gratuita o plan Pro).
+    </li>
+    <li>
+      <span class="stepTitle">Selecciona el modelo avanzado</span>
+      Elige el modelo de lenguaje avanzado <strong>Claude 3.5 Opus</strong>.
+      <br><small><em>Motivo:</em> los modelos con visión avanzada interpretan mejor la jerarquía visual de la captura.</small>
+    </li>
+    <li>
+      <span class="stepTitle">Configura el esfuerzo en «Alto»</span>
+      Ajusta el nivel de <strong>esfuerzo (High effort)</strong>.
+      <br><small><em>Motivo:</em> la IA dedicará más ciclos de procesamiento a la maquetación detallada del código.</small>
+    </li>
+    <li>
+      <span class="stepTitle">Adjunta la captura</span>
+      Haz clic en el icono de adjuntar archivo o arrastra la captura vertical de tu página de referencia.
+    </li>
+    <li>
+      <span class="stepTitle">Pega el prompt del Método 1</span>
+      Copia el bloque de abajo y pégalo en el chat.
+    </li>
+    <li>
+      <span class="stepTitle">Presiona Enter</span>
+      Aguarda a que la herramienta genere la vista previa de la página.
+    </li>
+  </ol>
+
+  <div class="promptBox">
+    <div class="promptHead">
+      <span>PROMPT · MÉTODO 1 (HTML)</span>
+      <button class="copyBtn" data-copy>COPIAR</button>
+    </div>
+    <pre class="promptBody">Quiero que repliques el diseño de la imagen que te acabo de subir lo más
+fielmente posible: la estructura de las secciones, el estilo visual, la paleta de
+colores y la tipografía. Tómala como referencia visual exacta. Usa el mismo
+acomodo de secciones que ves en la imagen.
+
+Todo el contenido debe estar en español.</pre>
+  </div>
+
+  <ol class="steps" start="7">
+    <li>
+      <span class="stepTitle">Observa el resultado</span>
+      Verás recuadros con líneas diagonales (<em>placeholders</em>) que representan las imágenes que deberás sustituir posteriormente.
+    </li>
+    <li>
+      <span class="stepTitle">Edita los textos en el panel visual</span>
+      Haz clic en cualquier elemento de texto para cambiar títulos, descripciones o alineaciones.
+    </li>
+    <li>
+      <span class="stepTitle">Ajusta mediante instrucciones</span>
+      Escribe en el chat de Claude solicitudes como <em>«Cambia el color del botón principal a azul oscuro»</em>.
+    </li>
+    <li>
+      <span class="stepTitle">Haz clic en «Compartir»</span>
+      El botón <strong>Share</strong> está en la esquina superior derecha.
+    </li>
+    <li>
+      <span class="stepTitle">Selecciona «Proyecto HTML»</span>
+      Aparecerá la opción en el menú desplegable.
+    </li>
+    <li>
+      <span class="stepTitle">Haz clic en «Exportar»</span>
+      Se descargará un archivo comprimido en formato <code>.zip</code> a tu computadora.
+    </li>
+    <li>
+      <span class="stepTitle">Accede a tu panel de Hostinger</span>
+      Entra con tus credenciales de hosting.
+    </li>
+    <li>
+      <span class="stepTitle">Haz clic en «Añadir sitio web»</span>
+      Selecciona la categoría <strong>Sitio HTML</strong>.
+    </li>
+    <li>
+      <span class="stepTitle">Elige «Dominio Temporal»</span>
+      Es ideal para pruebas sin afectar tu dominio principal.
+    </li>
+    <li>
+      <span class="stepTitle">Abre el Administrador de Archivos</span>
+      Ve a <strong>Archivos &gt; Administrador de Archivos</strong>.
+    </li>
+    <li>
+      <span class="stepTitle">Entra en la carpeta <code>public_html</code></span>
+      Es la carpeta raíz pública de tu sitio.
+    </li>
+    <li>
+      <span class="stepTitle">Elimina los archivos predeterminados</span>
+      Borra todo lo que exista dentro de <code>public_html</code> antes de subir lo tuyo.
+    </li>
+    <li>
+      <span class="stepTitle">Sube el contenido descomprimido</span>
+      Descomprime el <code>.zip</code> en tu equipo y sube <strong>los archivos de dentro</strong> (no la carpeta contenedora).
+    </li>
+    <li>
+      <span class="stepTitle">Renombra el archivo principal a <code>index.html</code></span>
+      <strong>Acción crítica obligatoria.</strong> Debe llamarse exactamente así, todo en minúsculas.
+    </li>
+    <li>
+      <span class="stepTitle">Abre tu dominio temporal en el navegador</span>
+      Verás tu nueva web publicada en internet.
+    </li>
+  </ol>
+
+  <h3>Diagrama de flujo del Método 1</h3>
+  <div class="flow">
+    <div class="flowBox">📸 Captura de pantalla + ✍️ Prompt Método 1</div>
+    <div class="flowArrow">▼</div>
+    <div class="flowBox hi">🧠 Claude Design (Opus · Esfuerzo Alto)</div>
+    <div class="flowArrow">▼</div>
+    <div class="flowBox">🖼 Prototipo HTML visual + placeholders</div>
+    <div class="flowArrow">▼</div>
+    <div class="flowBox">📦 Exportar en ZIP</div>
+    <div class="flowArrow">▼</div>
+    <div class="flowBox">🗂 Administrador de Archivos Hostinger</div>
+    <div class="flowArrow">▼</div>
+    <div class="flowBox hi">✏️ Renombrar a index.html</div>
+    <div class="flowArrow">▼</div>
+    <div class="flowBox">🌐 ¡Web en línea!</div>
+  </div>
+
+  <h3>Errores frecuentes en el Método 1</h3>
+  <div class="card bad">
+    <h4>❌ Error: subir el <code>.zip</code> a Hostinger sin cambiar el nombre del archivo principal</h4>
+    <p><strong>Solución:</strong> si tu archivo HTML se llama <code>home.html</code> o <code>pagina.html</code>, el servidor no sabrá qué mostrar. <strong>Renómbralo siempre a <code>index.html</code></strong>.</p>
+  </div>
+  <div class="card bad">
+    <h4>❌ Error: modificar la estructura del código dentro del administrador de archivos de Hostinger</h4>
+    <p><strong>Solución:</strong> realiza todos los cambios estéticos y de texto dentro del editor de Claude Design <strong>antes</strong> de exportar el ZIP definitivo.</p>
+  </div>
+
+  <div class="card accent">
+    <span class="badge">RESUMEN DEL BLOQUE</span>
+    <p>El Método 1 te permite obtener una página en HTML funcional en cuestión de minutos usando Claude Design. Solo requiere adjuntar la captura, ejecutar el prompt directo, exportar el archivo <code>.zip</code> y subirlo al directorio <code>public_html</code> de tu hosting bajo el nombre <code>index.html</code>.</p>
+  </div>
+
+  <!-- ===================== MÉTODO 2 ===================== -->
+  <h2>C. Método 2 · Clonar como Tema Nativo de WordPress (FSE)</h2>
+
+  <div class="card accent">
+    <span class="badge">¿POR QUÉ FSE?</span>
+    <p>El enfoque <strong>Full Site Editing (FSE)</strong> de WordPress permite gestionar todo el sitio (encabezados, plantillas, pies de página y bloques) de forma nativa, sin cargar constructores pesados.</p>
+    <p>Al solicitar a la IA un tema FSE basado en bloques nativos, obtienes una web con <strong>velocidad de carga máxima</strong>, código limpio y <strong>100 % editable</strong> desde el panel oficial de WordPress.</p>
+  </div>
+
+  <div class="card warn">
+    <span class="badge warn">OBSERVACIÓN TÉCNICA DE EXPERTO</span>
+    <p>Evita solicitar temas para editores como <strong>Elementor</strong> mediante este procedimiento. Generar la estructura de Elementor por IA requiere <em>promptings</em> excesivamente complejos y produce sitios más lentos y difíciles de mantener que los basados en bloques nativos FSE.</p>
+  </div>
+
+  <h4>Paso a paso</h4>
+  <ol class="steps">
+    <li>
+      <span class="stepTitle">Configura Claude Design</span>
+      Entra a <code>claude.ai/design</code> con el modelo <strong>Opus</strong> y el nivel de <strong>esfuerzo en «Alto»</strong>.
+    </li>
+    <li>
+      <span class="stepTitle">Adjunta la captura vertical</span>
+      Sube la imagen de tu web de referencia.
+    </li>
+    <li>
+      <span class="stepTitle">Pega el prompt técnico de WordPress FSE</span>
+      Copia el bloque completo de abajo y pégalo íntegramente.
+    </li>
+    <li>
+      <span class="stepTitle">Envía el mensaje y sé paciente</span>
+      Este proceso suele tardar <strong>entre 15 y 20 minutos</strong>, porque la IA genera toda la estructura de archivos de WordPress (<code>theme.json</code>, plantillas HTML de bloques y hoja de estilos).
+    </li>
+    <li>
+      <span class="stepTitle">Busca el botón «Descargar como tema»</span>
+      Aparecerá cuando el procesamiento termine (<em>Download theme</em>).
+    </li>
+    <li>
+      <span class="stepTitle">Si no aparece el botón, pídelo</span>
+      Desplázate hacia arriba en el chat o escribe: <em>«Proporcióname el botón para descargar el tema en archivo ZIP»</em>.
+    </li>
+    <li>
+      <span class="stepTitle">Guarda el archivo <code>.zip</code></span>
+      Puedes renombrarlo a algo descriptivo, por ejemplo <code>mi-tema-fse.zip</code>.
+    </li>
+    <li>
+      <span class="stepTitle">Entra al panel de Hostinger</span>
+      Selecciona <strong>Añadir sitio web &gt; WordPress</strong>.
+    </li>
+    <li>
+      <span class="stepTitle">Configura la instalación</span>
+      Idioma <strong>Español</strong>, tu correo y contraseña de administración, y elige <strong>Crear desde cero</strong>.
+    </li>
+    <li>
+      <span class="stepTitle">Asigna un dominio</span>
+      Puede ser temporal o definitivo. Completa la instalación.
+    </li>
+    <li>
+      <span class="stepTitle">Entra al escritorio de WordPress</span>
+      Abre <code>tudominio.com/wp-admin</code>.
+    </li>
+    <li>
+      <span class="stepTitle">Ve a Apariencia &gt; Temas</span>
+      Está en el menú lateral izquierdo.
+    </li>
+    <li>
+      <span class="stepTitle">Haz clic en «Añadir nuevo tema»</span>
+      Se abrirá la galería de temas.
+    </li>
+    <li>
+      <span class="stepTitle">Haz clic en «Subir tema»</span>
+      Botón situado en la parte superior.
+    </li>
+    <li>
+      <span class="stepTitle">Selecciona el <code>.zip</code> descargado</span>
+      Elige el archivo que bajaste de Claude.
+    </li>
+    <li>
+      <span class="stepTitle">Haz clic en «Instalar ahora»</span>
+      Espera a que termine la instalación.
+    </li>
+    <li>
+      <span class="stepTitle">Haz clic en «Activar»</span>
+      El tema quedará aplicado a tu sitio.
+    </li>
+    <li>
+      <span class="stepTitle">Ve a Apariencia &gt; Editor</span>
+      Se abrirá el Editor de Sitio (FSE).
+    </li>
+    <li>
+      <span class="stepTitle">Edita los textos</span>
+      Haz clic sobre cualquier bloque de texto para modificar títulos o párrafos.
+    </li>
+    <li>
+      <span class="stepTitle">Reemplaza las imágenes</span>
+      Haz clic sobre los <em>placeholders</em>, selecciona <strong>Reemplazar</strong> y sube tus fotografías reales.
+    </li>
+    <li>
+      <span class="stepTitle">Guarda los cambios</span>
+      Tu sitio quedará publicado.
+    </li>
+  </ol>
+
+  <div class="promptBox">
+    <div class="promptHead">
+      <span>PROMPT · MÉTODO 2 (WORDPRESS FSE)</span>
+      <button class="copyBtn" data-copy>COPIAR</button>
+    </div>
+    <pre class="promptBody">Crea un tema de WordPress compatible con Full Site Editing (FSE). Quiero que
+repliques el diseño de la imagen que te acabo de subir lo más fielmente posible:
+la estructura de las secciones, el estilo visual, la paleta de colores y la tipografía. Tómala como referencia visual exacta. Usa el mismo acomodo de
+secciones que ves en la imagen. El tema debe incluir una página que es donde se
+haga el diseño. Todo el contenido debe estar en español.
+
+Todos los elementos y bloques deben ser nativos, no coloques placeholders de
+HTML, coloca placeholders para imágenes si es lo que consideras. Si hay un efecto
+de botón o cualquier otro efecto que no se pueda hacer, no lo agregues. Agrega
+SOLO bloques nativos y haz lo mejor que puedas con lo que tienes.
+
+REQUISITOS TÉCNICOS
+- Genera un tema completo de WordPress con Full Site Editing (FSE).
+- El tema debe ser compatible con las versiones actuales de WordPress.
+- Utiliza la arquitectura y estructura oficial de temas FSE.
+- No utilices constructores visuales.
+- No incluyas dependencias externas innecesarias.
+- El código debe ser limpio, organizado y fácil de mantener.
+
+CSS
+- No utilices estilos inline.
+- No escribas CSS dentro del HTML.
+- Coloca todo el CSS en un archivo independiente llamado styles.css.
+- Organiza el CSS por secciones utilizando comentarios.
+
+Al final, necesitaré el archivo del tema en zip para subir a WordPress.</pre>
+  </div>
+
+  <div class="card accent">
+    <span class="badge">RESUMEN DEL BLOQUE</span>
+    <p>El Método 2 genera un tema completo de WordPress FSE empaquetado en formato <code>.zip</code> mediante instrucciones técnicas estrictas. Aunque tarda cerca de 20 minutos en procesarse, te entrega un sitio <strong>ultra rápido</strong>, editable con el editor nativo de bloques de WordPress y <strong>libre de dependencias pesadas</strong>.</p>
+  </div>
+
+  <!-- ===================== MÉTODO 3 ===================== -->
+  <h2>D. Método 3 · Clonar en Hostinger AI Builder (Vibe Coding)</h2>
+
+  <div class="card accent">
+    <span class="badge">¿QUÉ ES EL VIBE CODING?</span>
+    <p>El concepto de <strong>Vibe Coding</strong> se refiere a crear software o páginas web comunicándote <strong>exclusivamente en lenguaje natural</strong> con un agente de IA que escribe, estructura y ejecuta todo el código por ti en tiempo real.</p>
+    <p>En Hostinger, esta tecnología está integrada bajo la herramienta <strong>Creador con IA (Creador Agéntico)</strong>.</p>
+  </div>
+
+  <h4>Paso a paso</h4>
+  <ol class="steps">
+    <li>
+      <span class="stepTitle">Entra a tu panel principal de Hostinger</span>
+      Inicia sesión con tu cuenta.
+    </li>
+    <li>
+      <span class="stepTitle">Haz clic en «Añadir sitio web»</span>
+      Se abrirá el menú de tipos de sitio.
+    </li>
+    <li>
+      <span class="stepTitle">Selecciona «Creador con IA / Creador Agéntico»</span>
+      Es la opción de Vibe Coding.
+    </li>
+    <li>
+      <span class="stepTitle">Pega el prompt del Método 3</span>
+      Copia el bloque de abajo y pégalo en la caja de texto.
+    </li>
+    <li>
+      <span class="stepTitle">Adjunta la captura de pantalla</span>
+      Sube la imagen vertical de tu web de referencia.
+    </li>
+    <li>
+      <span class="stepTitle">Haz clic en enviar</span>
+      Se iniciará el asistente agéntico.
+    </li>
+    <li>
+      <span class="stepTitle">Observa cómo el agente programa en tiempo real</span>
+      Verás la web maquetarse ante tus ojos.
+    </li>
+    <li>
+      <span class="stepTitle">Edita directamente (opcional)</span>
+      Haz doble clic sobre cualquier texto o imagen dentro de la pantalla para editarlo manualmente.
+    </li>
+    <li>
+      <span class="stepTitle">Usa la casilla de chat para cambios estructurales</span>
+      Pide cosas como <em>«Haz el texto del título más pequeño»</em> o <em>«Cambia el icono de servicios por una herramienta»</em>.
+    </li>
+    <li>
+      <span class="stepTitle">Pulsa «Aplicar» tras cada instrucción</span>
+      Así se guardan los cambios en la maquetación.
+    </li>
+    <li>
+      <span class="stepTitle">Revisa la versión de escritorio y la móvil</span>
+      Usa los conmutadores de vista previa.
+    </li>
+    <li>
+      <span class="stepTitle">Haz clic en «Publicar»</span>
+      Tu sitio quedará en línea de inmediato en tu dominio temporal o definitivo.
+    </li>
+  </ol>
+
+  <div class="promptBox">
+    <div class="promptHead">
+      <span>PROMPT · MÉTODO 3 (HOSTINGER AI BUILDER)</span>
+      <button class="copyBtn" data-copy>COPIAR</button>
+    </div>
+    <pre class="promptBody">Quiero que repliques el diseño de la imagen que te acabo de subir lo más
+fielmente posible: la estructura de las secciones, el estilo visual, la paleta de
+colores y la tipografía. Tómala como referencia visual exacta. Usa el mismo acomodo de secciones que ves en la imagen.
+
+Todo el contenido debe estar en español.</pre>
+  </div>
+
+  <div class="card accent">
+    <span class="badge">RESUMEN DEL BLOQUE</span>
+    <p>El Método 3 aprovecha el Vibe Coding en el Creador con IA de Hostinger para maquetar sitios sin manipular archivos de código ni instalar gestores de contenido externos. Es la alternativa <strong>más directa e intuitiva</strong> para usuarios sin experiencia técnica.</p>
+  </div>
+
+  <!-- ===================== COMPARATIVA ===================== -->
+  <h2>E. Cuadro comparativo global y matriz de decisión</h2>
+
+  <div class="tableWrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Criterio</th>
+          <th>Método 1: HTML con Claude Design</th>
+          <th>Método 2: WordPress FSE</th>
+          <th>Método 3: Hostinger AI Builder</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Herramienta principal</strong></td>
+          <td>Claude Design + Hosting HTML</td>
+          <td>Claude Design + WordPress</td>
+          <td>Creador con IA de Hostinger</td>
+        </tr>
+        <tr>
+          <td><strong>Tiempo de generación</strong></td>
+          <td>Rápido (2 a 5 minutos)</td>
+          <td>Lento (15 a 20 minutos)</td>
+          <td>Intermedio (3 a 7 minutos)</td>
+        </tr>
+        <tr>
+          <td><strong>Formato de salida</strong></td>
+          <td>Archivo <code>.zip</code> con HTML/CSS</td>
+          <td>Archivo <code>.zip</code> con Tema FSE</td>
+          <td>Sitio web publicado directo en la nube</td>
+        </tr>
+        <tr>
+          <td><strong>Facilidad de edición posterior</strong></td>
+          <td>Requiere volver a Claude o editar HTML</td>
+          <td>Muy fácil (Editor de bloques WP)</td>
+          <td>Extremadamente fácil (Drag &amp; Drop + IA)</td>
+        </tr>
+        <tr>
+          <td><strong>Nivel técnico requerido</strong></td>
+          <td>Básico</td>
+          <td>Intermedio</td>
+          <td>Nulo (Vibe Coding)</td>
+        </tr>
+        <tr>
+          <td><strong>Rendimiento / Velocidad</strong></td>
+          <td>Excelente (HTML estático)</td>
+          <td>Excelente (Bloques nativos FSE)</td>
+          <td>Muy Bueno (Optimizado por el servidor)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Matriz de decisión: ¿qué método debes elegir?</h3>
+  <div class="grid three">
+    <div class="card ok">
+      <span class="badge ok">MÉTODO 1</span>
+      <h4>Elige HTML si…</h4>
+      <p>Necesitas crear una maquetación o demostración ultrarrápida para validar el aspecto visual ante un cliente antes de invertir más tiempo.</p>
+    </div>
+    <div class="card ok">
+      <span class="badge ok">MÉTODO 2</span>
+      <h4>Elige WordPress FSE si…</h4>
+      <p>Vas a construir un sitio web profesional duradero, un blog o una tienda que requiera la flexibilidad, escalabilidad y gestión de contenidos de WordPress.</p>
+    </div>
+    <div class="card ok">
+      <span class="badge ok">MÉTODO 3</span>
+      <h4>Elige Hostinger AI si…</h4>
+      <p>No deseas manejar archivos ZIP, bases de datos ni configuraciones de WordPress, y buscas tener tu web lista en el menor tiempo posible.</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- ============================================================
+     PRÁCTICA
+     ============================================================ -->
+<section class="panel" id="practica">
+
+  <h1>Práctica Guiada</h1>
+  <p class="lead">Ejercicios con solución explicada, paso a paso, para que fijes lo aprendido.</p>
+
+  <h2>Lista de comprobación de aprendizaje</h2>
+  <p>Marca cada punto cuando lo hayas completado. Tu progreso se guarda automáticamente en este navegador.</p>
+
+  <div class="progressText">
+    <span id="checkCount">0 / 10 completado</span>
+    <div class="miniBar"><div class="miniBarFill" id="miniBarFill"></div></div>
+  </div>
+
+  <div id="checklist">
+    <label class="checkItem"><input type="checkbox" data-check="c1"><span class="label">Sé qué es la clonación web con IA y para qué sirve.</span></label>
+    <label class="checkItem"><input type="checkbox" data-check="c2"><span class="label">Entiendo la diferencia entre inspirarse y plagiar.</span></label>
+    <label class="checkItem"><input type="checkbox" data-check="c3"><span class="label">Instalé una extensión de captura de página completa en Chrome.</span></label>
+    <label class="checkItem"><input type="checkbox" data-check="c4"><span class="label">Obtuve una captura vertical completa y nítida de una web de referencia.</span></label>
+    <label class="checkItem"><input type="checkbox" data-check="c5"><span class="label">Rellené el Prompt General Molde con datos de un negocio real.</span></label>
+    <label class="checkItem"><input type="checkbox" data-check="c6"><span class="label">Generé un prototipo HTML en Claude Design (Método 1).</span></label>
+    <label class="checkItem"><input type="checkbox" data-check="c7"><span class="label">Subí el HTML a Hostinger y lo llamé <code>index.html</code>.</span></label>
+    <label class="checkItem"><input type="checkbox" data-check="c8"><span class="label">Generé un tema WordPress FSE con IA (Método 2).</span></label>
+    <label class="checkItem"><input type="checkbox" data-check="c9"><span class="label">Probé el Creador con IA de Hostinger (Método 3).</span></label>
+    <label class="checkItem"><input type="checkbox" data-check="c10"><span class="label">Sé qué método elegir según el tipo de proyecto.</span></label>
+  </div>
+
+  <h2>Ejercicio 1 · Landing Page para una Veterinaria en HTML</h2>
+  <div class="card">
+    <span class="badge">CONSIGNA</span>
+    <p>Tienes la captura de la página web de un centro médico y quieres crear un <strong>prototipo rápido en HTML</strong> para una veterinaria llamada <strong>«PetCare»</strong>.</p>
+  </div>
+
+  <details open>
+    <summary>✅ Solución explicada, paso a paso</summary>
+    <div class="detailsBody">
+      <ol class="steps">
+        <li><span class="stepTitle">Utiliza el Prompt General Molde</span>Cópialo del bloque de la pestaña PROCEDIMIENTO.</li>
+        <li><span class="stepTitle">Rellena el campo «El sitio es para»</span>Escribe: <code>[Clínica Veterinaria y Peluquería Canina]</code>.</li>
+        <li><span class="stepTitle">Rellena el campo «Nombre»</span>Escribe: <code>[PetCare]</code>.</li>
+        <li><span class="stepTitle">Rellena el campo «Qué ofrece»</span>Escribe: <code>[Atención médica 24/7, vacunación y estética para mascotas]</code>.</li>
+        <li><span class="stepTitle">Ejecuta el prompt en Claude Design</span>Con modelo Opus y esfuerzo Alto, adjuntando la captura del centro médico.</li>
+        <li><span class="stepTitle">Descarga el ZIP</span>Usa el botón <strong>Compartir &gt; Proyecto HTML &gt; Exportar</strong>.</li>
+        <li><span class="stepTitle">Súbelo a Hostinger</span>Descomprime el ZIP y sube los archivos a <code>public_html</code>.</li>
+        <li><span class="stepTitle">Renombra la portada</span>Debe llamarse exactamente <code>index.html</code>.</li>
+      </ol>
+      <p><strong>Resultado esperado:</strong> una landing page en línea, con la estructura visual del centro médico, pero con el nombre, los colores y los textos de PetCare.</p>
+    </div>
+  </details>
+
+  <h2>Ejercicio 2 · Tema de WordPress para un Estudio de Arquitectura</h2>
+  <div class="card">
+    <span class="badge">CONSIGNA</span>
+    <p>Deseas crear un <strong>sitio web autoadministrable en WordPress</strong> con alta velocidad para una empresa de arquitectura.</p>
+  </div>
+
+  <details>
+    <summary>✅ Solución explicada, paso a paso</summary>
+    <div class="detailsBody">
+      <ol class="steps">
+        <li><span class="stepTitle">Toma la captura completa del sitio de referencia</span>Desde el menú superior hasta el footer.</li>
+        <li><span class="stepTitle">Ejecuta el Prompt del Método 2</span>En Claude Design, con modelo Opus y esfuerzo Alto.</li>
+        <li><span class="stepTitle">Aguarda el tiempo de procesamiento</span>Aproximadamente 20 minutos.</li>
+        <li><span class="stepTitle">Descarga el archivo <code>.zip</code> del tema</span>Usa el botón «Descargar como tema».</li>
+        <li><span class="stepTitle">Entra al panel de WordPress en Hostinger</span>Ve a <code>tudominio.com/wp-admin</code>.</li>
+        <li><span class="stepTitle">Ve a Apariencia &gt; Temas &gt; Añadir nuevo</span>Se abrirá la galería de temas.</li>
+        <li><span class="stepTitle">Sube e instala el archivo <code>.zip</code></span>Haz clic en «Subir tema» y luego en «Instalar ahora».</li>
+        <li><span class="stepTitle">Activa el tema</span>Haz clic en «Activar».</li>
+        <li><span class="stepTitle">Personaliza en el Editor de Sitio FSE</span>Reemplaza los placeholders por tus imágenes de maquetas y proyectos.</li>
+        <li><span class="stepTitle">Guarda los cambios</span>Tu sitio de arquitectura quedará publicado.</li>
+      </ol>
+      <p><strong>Resultado esperado:</strong> un sitio WordPress rápido, editable con bloques nativos, sin constructores pesados.</p>
+    </div>
+  </details>
+
+  <h2>Ejercicio 3 · Web sin tocar código con Hostinger AI Builder</h2>
+  <div class="card">
+    <span class="badge">CONSIGNA</span>
+    <p>Necesitas publicar la web de un restaurante hoy mismo y <strong>no quieres manejar archivos ZIP ni paneles de WordPress</strong>.</p>
+  </div>
+
+  <details>
+    <summary>✅ Solución explicada, paso a paso</summary>
+    <div class="detailsBody">
+      <ol class="steps">
+        <li><span class="stepTitle">Entra a tu panel de Hostinger</span>Inicia sesión.</li>
+        <li><span class="stepTitle">Haz clic en «Añadir sitio web»</span>Se abrirá el menú de tipos.</li>
+        <li><span class="stepTitle">Selecciona «Creador con IA»</span>El asistente agéntico.</li>
+        <li><span class="stepTitle">Pega el prompt del Método 3</span>Añadiendo los datos del restaurante.</li>
+        <li><span class="stepTitle">Adjunta la captura de referencia</span>La imagen vertical completa.</li>
+        <li><span class="stepTitle">Espera la generación</span>Entre 3 y 7 minutos.</li>
+        <li><span class="stepTitle">Ajusta con el chat</span>Pide cambios como <em>«Cambia la foto del héroe por una de un plato de pasta»</em>.</li>
+        <li><span class="stepTitle">Revisa la vista móvil</span>Usa el conmutador de vista previa.</li>
+        <li><span class="stepTitle">Pulsa «Publicar»</span>Tu web quedará en línea al instante.</li>
+      </ol>
+      <p><strong>Resultado esperado:</strong> sitio publicado, sin tocar código, sin ZIP y sin base de datos.</p>
+    </div>
+  </details>
+
+</section>
+
+<!-- ============================================================
+     ERRORES
+     ============================================================ -->
+<section class="panel" id="errores">
+
+  <h1>Errores Frecuentes y Cómo Evitarlos</h1>
+  <p class="lead">Los tropiezos más habituales, ordenados por gravedad, con su solución concreta.</p>
+
+  <h2>Los 4 errores que NUNCA debes cometer</h2>
+
+  <div class="card bad">
+    <span class="badge bad">ERROR 1</span>
+    <h3>Copiar texto o marcas registradas</h3>
+    <p><strong>Qué pasa:</strong> incurrir en plagio de contenidos o imágenes registradas de otra empresa. Puede acarrear consecuencias legales.</p>
+    <p><strong>Cómo evitarlo:</strong> usa el prompt con la frase <em>«no copies el texto de la imagen, solo el diseño»</em> y sustituye siempre textos, logotipos y fotos por los tuyos.</p>
+  </div>
+
+  <div class="card bad">
+    <span class="badge bad">ERROR 2</span>
+    <h3>Utilizar capturas recortadas</h3>
+    <p><strong>Qué pasa:</strong> enviar a la IA una imagen incompleta impide maquetar correctamente el pie de página o la navegación. La IA rellena los huecos <em>inventando</em>.</p>
+    <p><strong>Cómo evitarlo:</strong> usa siempre una extensión de captura de página completa y verifica que la imagen llegue hasta el footer.</p>
+  </div>
+
+  <div class="card bad">
+    <span class="badge bad">ERROR 3</span>
+    <h3>Olvidar renombrar el archivo en el Método HTML</h3>
+    <p><strong>Qué pasa:</strong> subes archivos a <code>public_html</code> sin nombrarlos como <code>index.html</code>. El servidor no sabe qué mostrar y aparece un listado de archivos o un error.</p>
+    <p><strong>Cómo evitarlo:</strong> antes de subir, verifica que el archivo principal se llame exactamente <code>index.html</code>, todo en minúsculas.</p>
+  </div>
+
+  <div class="card bad">
+    <span class="badge bad">ERROR 4</span>
+    <h3>Intentar adaptar la salida a Elementor</h3>
+    <p><strong>Qué pasa:</strong> tratas de forzar código FSE dentro de constructores pesados, arruinando el rendimiento y la velocidad de carga.</p>
+    <p><strong>Cómo evitarlo:</strong> si pediste un tema FSE, úsalo con el editor nativo de bloques de WordPress. No lo mezcles con Elementor ni otros maquetadores.</p>
+  </div>
+
+  <h2>Otros errores frecuentes</h2>
+
+  <details>
+    <summary>❌ Subir el ZIP completo a <code>public_html</code> sin descomprimir</summary>
+    <div class="detailsBody">
+      <p><strong>Qué pasa:</strong> el servidor sirve un archivo comprimido en lugar de tu web.</p>
+      <p><strong>Solución:</strong> descomprime el ZIP en tu equipo y sube los archivos y carpetas que están <em>dentro</em>, no la carpeta contenedora.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>❌ Editar el HTML directamente en el administrador de archivos de Hostinger</summary>
+    <div class="detailsBody">
+      <p><strong>Qué pasa:</strong> es fácil romper la estructura y perder el trabajo sin control de versiones.</p>
+      <p><strong>Solución:</strong> haz todos los cambios en Claude Design antes de exportar. Si necesitas un ajuste puntual, hazlo en tu equipo y vuelve a subir el archivo.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>❌ Dejar los corchetes <code>[...]</code> sin rellenar en el prompt</summary>
+    <div class="detailsBody">
+      <p><strong>Qué pasa:</strong> la IA recibe un prompt incompleto y genera contenido genérico o inventado.</p>
+      <p><strong>Solución:</strong> revisa siempre que todos los campos entre corchetes estén sustituidos por datos reales de tu negocio.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>❌ Usar un modelo de IA sin visión por computadora</summary>
+    <div class="detailsBody">
+      <p><strong>Qué pasa:</strong> la IA no puede «ver» la captura y responde con texto genérico o se inventa el diseño.</p>
+      <p><strong>Solución:</strong> selecciona siempre un modelo con capacidades de visión avanzada (por ejemplo, Claude 3.5 Opus).</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>❌ Impacientarse con el Método 2</summary>
+    <div class="detailsBody">
+      <p><strong>Qué pasa:</strong> el proceso tarda 15-20 minutos y parece que se ha colgado.</p>
+      <p><strong>Solución:</strong> espera. La IA está generando múltiples archivos (<code>theme.json</code>, plantillas HTML, CSS). No canceles ni recargues la página.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>❌ Publicar sin revisar la versión móvil</summary>
+    <div class="detailsBody">
+      <p><strong>Qué pasa:</strong> más de la mitad del tráfico llega desde el móvil y el diseño puede romperse en pantallas pequeñas.</p>
+      <p><strong>Solución:</strong> usa los conmutadores de vista previa (escritorio / móvil) antes de pulsar Publicar.</p>
+    </div>
+  </details>
+
+</section>
+
+<!-- ============================================================
+     RESUMEN
+     ============================================================ -->
+<section class="panel" id="resumen">
+
+  <h1>Resumen General</h1>
+
+  <h2>Lo que has aprendido</h2>
+  <div class="card ok">
+    <ol>
+      <li>Clonar un sitio web con IA significa <strong>replicar éticamente</strong> la estructura, estilos y colores de una referencia visual, sustituyendo todo el contenido con datos propios de tu empresa.</li>
+      <li>La calidad del clon depende directamente de la <strong>resolución e integridad</strong> de la captura de pantalla.</li>
+      <li>Existen tres vías de implementación: <strong>prototipado directo en HTML</strong> (Método 1), <strong>creación de temas escalables para WordPress FSE</strong> (Método 2) y <strong>desarrollo por Vibe Coding en creadores web con IA</strong> (Método 3).</li>
+    </ol>
+  </div>
+
+  <h2>Conceptos clave</h2>
+  <div class="grid two">
+    <div class="card">
+      <h4>Prompt</h4>
+      <p>Conjunto de instrucciones textuales estructuradas que guían a un modelo de IA para realizar una tarea específica.</p>
+    </div>
+    <div class="card">
+      <h4>Full Site Editing (FSE)</h4>
+      <p>Arquitectura nativa de WordPress que permite personalizar todas las secciones de un sitio mediante bloques sin usar maquetadores pesados.</p>
+    </div>
+    <div class="card">
+      <h4>Placeholder</h4>
+      <p>Elemento gráfico o textual temporal utilizado para reservar el espacio donde se ubicará una foto o texto definitivo.</p>
+    </div>
+    <div class="card">
+      <h4>Vibe Coding</h4>
+      <p>Metodología de desarrollo donde el creador guía a la IA en lenguaje natural y la IA escribe todo el código ejecutable en tiempo real.</p>
+    </div>
+    <div class="card">
+      <h4>Dominio Temporal</h4>
+      <p>Dirección web genérica proporcionada por el servidor para realizar pruebas antes de vincular un dominio <code>.com</code> definitivo.</p>
+    </div>
+  </div>
+
+  <h2>Glosario de términos técnicos</h2>
+  <div class="tableWrap">
+    <table>
+      <thead>
+        <tr><th>Término</th><th>Significado</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>CSS</strong></td><td>Cascading Style Sheets. Lenguaje utilizado para definir el diseño visual, colores, fuentes y distribución de un sitio web.</td></tr>
+        <tr><td><strong>HTML</strong></td><td>HyperText Markup Language. Lenguaje de marcado que define la estructura básica del contenido de una página web.</td></tr>
+        <tr><td><strong>Hosting</strong></td><td>Servicio de almacenamiento en línea que mantiene los archivos de tu página web accesibles en internet.</td></tr>
+        <tr><td><strong>ZIP</strong></td><td>Formato de archivo comprimido que agrupa múltiples carpetas y archivos para facilitar su descarga y carga.</td></tr>
+        <tr><td><strong>Opus</strong></td><td>Uno de los modelos de inteligencia artificial más potentes de la familia Claude, con capacidad avanzada de visión e ingeniería de código.</td></tr>
+        <tr><td><strong>index.html</strong></td><td>Nombre convencional del archivo principal de un sitio web. El servidor lo busca automáticamente al abrir el dominio.</td></tr>
+        <tr><td><strong>public_html</strong></td><td>Carpeta raíz pública del hosting donde deben colocarse los archivos visibles del sitio web.</td></tr>
+        <tr><td><strong>theme.json</strong></td><td>Archivo de configuración global de un tema WordPress FSE. Define colores, tipografías, espaciados y estilos.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Preguntas frecuentes</h2>
+
+  <details>
+    <summary>¿Necesito saber programar para hacer esto?</summary>
+    <div class="detailsBody"><p>No. Los tres métodos están pensados para que escribas en lenguaje natural. El Método 3 (Hostinger AI Builder) requiere literalmente cero conocimientos técnicos.</p></div>
+  </details>
+
+  <details>
+    <summary>¿Es legal clonar una página web?</summary>
+    <div class="detailsBody"><p>Clonar la <strong>estructura visual</strong> (disposición de columnas, jerarquía de encabezados, paleta de colores, navegación) es una práctica habitual de inspiración. Lo que <strong>nunca</strong> es legal es copiar textos con derechos de autor, logotipos, marcas registradas o fotografías de terceros.</p></div>
+  </details>
+
+  <details>
+    <summary>¿Qué diferencia hay entre el Método 1 y el Método 2?</summary>
+    <div class="detailsBody"><p>El Método 1 genera un archivo HTML estático, rapidísimo de crear pero que requiere volver a Claude para cambios estructurales. El Método 2 genera un tema completo de WordPress, tarda más (15-20 min) pero es autoadministrable desde el panel de WordPress y escala mucho mejor a largo plazo.</p></div>
+  </details>
+
+  <details>
+    <summary>¿Puedo usar Elementor con esto?</summary>
+    <div class="detailsBody"><p>No es recomendable. Generar estructuras de Elementor por IA requiere <em>promptings</em> excesivamente complejos y produce sitios más lentos y difíciles de mantener. Usa siempre bloques nativos FSE.</p></div>
+  </details>
+
+  <details>
+    <summary>¿Cuánto tarda cada método?</summary>
+    <div class="detailsBody">
+      <ul>
+        <li><strong>Método 1 (HTML):</strong> 2 a 5 minutos.</li>
+        <li><strong>Método 2 (WordPress FSE):</strong> 15 a 20 minutos.</li>
+        <li><strong>Método 3 (Hostinger AI):</strong> 3 a 7 minutos.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary>¿Qué hago si la IA inventa premios o cifras que no le di?</summary>
+    <div class="detailsBody"><p>Es exactamente lo que evitan las <strong>restricciones del Prompt General Molde</strong>: <em>«No inventes premios, certificaciones ni cifras que no te di»</em>. Asegúrate de incluir esa sección de RESTRICCIONES al final de tu prompt.</p></div>
+  </details>
+
+  <h2>Recomendaciones para seguir aprendiendo</h2>
+  <div class="card accent">
+    <ul>
+      <li>Practica personalizando el <strong>Prompt General Molde</strong> con distintos tipos de negocios (restaurantes, consultoras, tiendas).</li>
+      <li>Experimenta modificando reglas de diseño CSS directamente en el prompt (por ejemplo, especificando tipografías de Google Fonts o códigos de color hexadecimales).</li>
+      <li>Analiza el rendimiento de tus sitios clonados en herramientas como <strong>Google PageSpeed Insights</strong> para verificar la velocidad de carga.</li>
+    </ul>
+  </div>
+
+</section>
+
+<!-- ============================================================
+     FUENTES
+     ============================================================ -->
+<section class="panel" id="fuentes">
+
+  <h1>Fuentes y Enlaces</h1>
+  <p class="lead">De dónde proviene la información de este tutorial.</p>
+
+  <h2>Fuente principal del contenido</h2>
+  <div class="card accent">
+    <span class="badge">ARCHIVO ADJUNTO</span>
+    <h4>Guía de Prompts para Clonar Páginas Web con IA</h4>
+    <p><strong>Autor:</strong> Rubén Sbarsky</p>
+    <p><strong>Formato:</strong> documento de texto / Markdown</p>
+    <p>Todo el contenido de este tutorial —conceptos, procedimientos, prompts, tablas comparativas, ejercicios, errores frecuentes y glosario— proviene de este archivo. No se ha añadido información externa al mismo; únicamente se ha reorganizado, ampliado pedagógicamente y adaptado al formato interactivo.</p>
+  </div>
+
+  <h2>Enlaces citados dentro de la fuente original</h2>
+
+  <div class="card">
+    <h4>🎬 Video Tutorial Oficial en YouTube</h4>
+    <p><strong>Título:</strong> «Clonar Una Página Web con IA: 3 Métodos, ¿Cuál Es el Mejor?»</p>
+    <p><strong>Canal:</strong> MarketHax | Cursos de WordPress y WooCommerce</p>
+    <p><strong>URL:</strong> <code>https://youtube.com/watch?v=1YCOEfgn1P4&amp;is=JEY1GK1ZPLqyzDQV</code></p>
+  </div>
+
+  <div class="card">
+    <h4>🧠 Plataforma de Inteligencia Artificial — Claude AI</h4>
+    <p><strong>Uso:</strong> Claude Design para generar prototipos HTML y temas WordPress FSE.</p>
+    <p><strong>URL:</strong> <code>https://claude.ai</code></p>
+  </div>
+
+  <div class="card">
+    <h4>🌐 Plataforma de Alojamiento — Hostinger</h4>
+    <p><strong>Uso:</strong> hosting web, instalación de WordPress y Creador con IA (Vibe Coding).</p>
+    <p><strong>URL:</strong> <code>https://hostinger.com</code></p>
+  </div>
+
+  <div class="card">
+    <h4>📚 Portal MarketHax</h4>
+    <p><strong>Uso:</strong> sitio oficial y recursos de la comunidad.</p>
+    <p><strong>URL:</strong> <code>https://markethax.com</code></p>
+  </div>
+
+  <h2>Información adicional utilizada</h2>
+  <div class="card warn">
+    <p>Para la construcción de este archivo HTML interactivo (pestañas, buscador, botones de copiado, SVG animados, modo claro/oscuro, checklist con <code>localStorage</code>) se han aplicado exclusivamente <strong>tecnologías estándar del navegador</strong>: HTML, CSS y JavaScript nativos. No se ha utilizado ninguna biblioteca, CDN o fuente externa.</p>
+    <p>El contenido pedagógico, ejemplos y procedimientos son <strong>íntegramente</strong> los del archivo fuente adjunto.</p>
+  </div>
+
+</section>
+
+<!-- ============================================================
+     PROMPTS
+     ============================================================ -->
+<section class="panel" id="prompts">
+
+  <h1>Biblioteca de Prompts</h1>
+  <p class="lead">Todos los prompts del documento fuente, listos para copiar y pegar. Cada bloque incluye descripción y recomendación de uso.</p>
+
+  <div class="card accent">
+    <span class="badge">ÍNDICE DE PROMPTS</span>
+    <ul class="promptIndex">
+      <li><a href="#prompt-general">Prompt General para Clonar una Web (molde con datos del negocio)</a></li>
+      <li><a href="#prompt-metodo1">Método 1 · Clonar la Web en HTML</a></li>
+      <li><a href="#prompt-metodo2">Método 2 · Clonar como Tema de WordPress (FSE)</a></li>
+      <li><a href="#prompt-metodo3">Método 3 · Clonar la Web en AI Builder (Hostinger)</a></li>
+    </ul>
+  </div>
+
+  <!-- ============================================================
+       PROMPT 1 · GENERAL
+       ============================================================ -->
+  <article class="card promptCard" id="prompt-general">
+    <span class="badge">PROMPT GENERAL</span>
+    <h3 class="promptTitle">Prompt General para Clonar una Web</h3>
+    <div class="promptMeta">
+      <p><span class="metaLabel">Descripción:</span> Es el molde maestro. Pide a la IA replicar el diseño de una captura (estructura, estilo, paleta y tipografía) y generar contenido propio para un negocio concreto, añadiendo restricciones explícitas para que no invente datos ni agregue secciones no deseadas.</p>
+      <p><span class="metaLabel">Uso:</span> Úsalo siempre que quieras partir de una captura de referencia y producir una web con la identidad de tu propio negocio. Es la base de la que derivan los tres métodos; rellena los campos entre corchetes antes de enviarlo.</p>
+    </div>
+    <div class="promptBox">
+      <div class="promptHead">
+        <span>PROMPT · GENERAL PARA CLONAR UNA WEB</span>
+        <button class="copyBtn" data-copy>COPIAR</button>
+      </div>
+      <pre class="promptBody">Quiero que repliques el diseño de la imagen que te acabo de subir lo más
+fielmente posible: la estructura de las secciones, el estilo visual, la paleta de
+colores y la tipografía. Tómala como referencia visual exacta.
+
+Todo el contenido debe estar en español.
+
+El sitio es para: [tipo de negocio — ej. un estudio de diseño gráfico]
+Nombre: [nombre del negocio]
+Qué ofrece: [1-2 líneas]
+
+Usa el mismo acomodo de secciones que ves en la imagen, pero con contenido propio de este negocio — no copies el texto de la imagen, solo el diseño.
+
+RESTRICCIONES:
+- No inventes premios, certificaciones ni cifras que no te di
+- No agregues secciones que no aparezcan en la imagen de referencia
+- No construyas funcionalidades interactivas todavía, eso lo pido después</pre>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       PROMPT 2 · MÉTODO 1 (HTML)
+       ============================================================ -->
+  <article class="card promptCard" id="prompt-metodo1">
+    <span class="badge">MÉTODO 1 · HTML</span>
+    <h3 class="promptTitle">Método 1 · Clonar la Web en HTML</h3>
+    <div class="promptMeta">
+      <p><span class="metaLabel">Descripción:</span> Prompt directo y minimalista que pide a la IA replicar fielmente la estructura, estilo, colores y tipografía de la captura, usando el mismo acomodo de secciones y contenido en español.</p>
+      <p><span class="metaLabel">Uso:</span> Ideal cuando solo necesitas validar la fidelidad visual del diseño en HTML a partir de la captura, antes de agregar contenido propio de un negocio. Es la opción más rápida para una demo o prototipo.</p>
+    </div>
+    <div class="promptBox">
+      <div class="promptHead">
+        <span>PROMPT · MÉTODO 1 (HTML)</span>
+        <button class="copyBtn" data-copy>COPIAR</button>
+      </div>
+      <pre class="promptBody">Quiero que repliques el diseño de la imagen que te acabo de subir lo más
+fielmente posible: la estructura de las secciones, el estilo visual, la paleta de
+colores y la tipografía. Tómala como referencia visual exacta. Usa el mismo
+acomodo de secciones que ves en la imagen.
+
+Todo el contenido debe estar en español.</pre>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       PROMPT 3 · MÉTODO 2 (WORDPRESS FSE)
+       ============================================================ -->
+  <article class="card promptCard" id="prompt-metodo2">
+    <span class="badge">MÉTODO 2 · WORDPRESS FSE</span>
+    <h3 class="promptTitle">Método 2 · Clonar como Tema de WordPress (FSE)</h3>
+    <div class="promptMeta">
+      <p><span class="metaLabel">Descripción:</span> Prompt técnico extenso que solicita a la IA crear un tema completo de WordPress basado en Full Site Editing (FSE), usando únicamente bloques nativos, sin constructores visuales, sin dependencias externas y con el CSS organizado en un archivo independiente llamado <code>styles.css</code>. Devuelve el tema en un archivo <code>.zip</code> listo para subir a WordPress.</p>
+      <p><span class="metaLabel">Uso:</span> Empléalo cuando quieras un sitio profesional, autoadministrable y de alto rendimiento, editable desde el panel nativo de WordPress. Tarda más en generarse (15-20 min), pero es la opción más escalable a largo plazo.</p>
+    </div>
+    <div class="promptBox">
+      <div class="promptHead">
+        <span>PROMPT · MÉTODO 2 (WORDPRESS FSE)</span>
+        <button class="copyBtn" data-copy>COPIAR</button>
+      </div>
+      <pre class="promptBody">Crea un tema de WordPress compatible con Full Site Editing (FSE). Quiero que
+repliques el diseño de la imagen que te acabo de subir lo más fielmente posible:
+la estructura de las secciones, el estilo visual, la paleta de colores y la tipografía. Tómala como referencia visual exacta. Usa el mismo acomodo de
+secciones que ves en la imagen. El tema debe incluir una página que es donde se
+haga el diseño. Todo el contenido debe estar en español.
+
+Todos los elementos y bloques deben ser nativos, no coloques placeholders de
+HTML, coloca placeholders para imágenes si es lo que consideras. Si hay un efecto
+de botón o cualquier otro efecto que no se pueda hacer, no lo agregues. Agrega
+SOLO bloques nativos y haz lo mejor que puedas con lo que tienes.
+
+REQUISITOS TÉCNICOS
+- Genera un tema completo de WordPress con Full Site Editing (FSE).
+- El tema debe ser compatible con las versiones actuales de WordPress.
+- Utiliza la arquitectura y estructura oficial de temas FSE.
+- No utilices constructores visuales.
+- No incluyas dependencias externas innecesarias.
+- El código debe ser limpio, organizado y fácil de mantener.
+
+CSS
+- No utilices estilos inline.
+- No escribas CSS dentro del HTML.
+- Coloca todo el CSS en un archivo independiente llamado styles.css.
+- Organiza el CSS por secciones utilizando comentarios.
+
+Al final, necesitaré el archivo del tema en zip para subir a WordPress.</pre>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       PROMPT 4 · MÉTODO 3 (HOSTINGER AI)
+       ============================================================ -->
+  <article class="card promptCard" id="prompt-metodo3">
+    <span class="badge">MÉTODO 3 · HOSTINGER AI</span>
+    <h3 class="promptTitle">Método 3 · Clonar la Web en AI Builder (Hostinger)</h3>
+    <div class="promptMeta">
+      <p><span class="metaLabel">Descripción:</span> Prompt optimizado para usarse directamente dentro del Creador con IA (Creador Agéntico / Vibe Coding) de Hostinger. Pide replicar fielmente estructura, estilo, colores y tipografía de la captura, con todo el contenido en español.</p>
+      <p><span class="metaLabel">Uso:</span> Perfecto cuando no quieres manejar archivos ZIP, bases de datos ni paneles de WordPress, y buscas publicar tu web directamente desde el panel de Hostinger en el menor tiempo posible.</p>
+    </div>
+    <div class="promptBox">
+      <div class="promptHead">
+        <span>PROMPT · MÉTODO 3 (HOSTINGER AI BUILDER)</span>
+        <button class="copyBtn" data-copy>COPIAR</button>
+      </div>
+      <pre class="promptBody">Quiero que repliques el diseño de la imagen que te acabo de subir lo más
+fielmente posible: la estructura de las secciones, el estilo visual, la paleta de
+colores y la tipografía. Tómala como referencia visual exacta. Usa el mismo acomodo de secciones que ves en la imagen.
+
+Todo el contenido debe estar en español.</pre>
+    </div>
+  </article>
+
+  <div class="card accent">
+    <span class="badge">RECORDATORIO</span>
+    <p>Todos los prompts están extraídos literalmente del documento fuente <strong>«Guía de Prompts para Clonar Páginas Web con IA»</strong> de Rubén Sbarsky. No se han resumido, alterado ni ampliado. Los campos entre corchetes <code>[...]</code> deben rellenarse con los datos reales de tu negocio antes de enviarlos a la IA.</p>
+  </div>
+
+</section>
+
+<!-- ============================================================
+     CRÉDITOS
+     ============================================================ -->
+<section class="panel" id="creditos">
+
+  <div class="heroSvgWrap">
+    <svg viewBox="0 0 500 180" role="img" aria-label="Animación de créditos: una firma dibujándose y estrellas orbitando">
+      <defs>
+        <linearGradient id="gC" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#38bdf8"/>
+          <stop offset="100%" stop-color="#a78bfa"/>
+        </linearGradient>
+        <filter id="glowC">
+          <feGaussianBlur stdDeviation="3" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- Anillo orbital -->
+      <ellipse cx="250" cy="90" rx="150" ry="55" fill="none" stroke="#1e3a5f" stroke-width="1.5" stroke-dasharray="6 8">
+        <animateTransform attributeName="transform" type="rotate" from="0 250 90" to="360 250 90" dur="22s" repeatCount="indefinite"/>
+      </ellipse>
+
+      <!-- Puntos orbitando -->
+      <circle r="5" fill="#38bdf8" filter="url(#glowC)">
+        <animateMotion dur="7s" repeatCount="indefinite" path="M250,35 A150,55 0 1,1 249.9,35"/>
+      </circle>
+      <circle r="4" fill="#a78bfa" filter="url(#glowC)">
+        <animateMotion dur="9s" repeatCount="indefinite" path="M250,145 A150,55 0 1,0 249.9,145"/>
+      </circle>
+
+      <!-- Estrella central -->
+      <g>
+        <circle cx="250" cy="90" r="30" fill="none" stroke="url(#gC)" stroke-width="2.5">
+          <animate attributeName="r" values="28;38;28" dur="3s" repeatCount="indefinite"/>
+          <animate attributeName="stroke-opacity" values="1;.35;1" dur="3s" repeatCount="indefinite"/>
+        </circle>
+        <path d="M250 68 L256 84 L273 84 L259 94 L265 110 L250 100 L235 110 L241 94 L227 84 L244 84 Z"
+              fill="url(#gC)" filter="url(#glowC)">
+          <animateTransform attributeName="transform" type="rotate" from="0 250 90" to="360 250 90" dur="18s" repeatCount="indefinite"/>
+        </path>
+      </g>
+
+      <!-- Firma que se dibuja -->
+      <path d="M100 150 C 140 110, 170 165, 200 130 S 250 165, 285 128 S 340 160, 400 122"
+            fill="none" stroke="url(#gC)" stroke-width="3" stroke-linecap="round"
+            stroke-dasharray="620" stroke-dashoffset="620" filter="url(#glowC)">
+        <animate attributeName="stroke-dashoffset" from="620" to="0" dur="4s" repeatCount="indefinite"/>
+      </path>
+
+      <text x="250" y="30" text-anchor="middle" font-size="12" font-weight="800" fill="#64748b" letter-spacing="4" font-family="system-ui,sans-serif">CRÉDITOS</text>
+    </svg>
+  </div>
+
+  <div style="text-align:center;padding:1rem 0;">
+    <span class="badge">AUTOR DEL TUTORIAL</span>
+    <h1 class="creditName">Rubén Sbarsky</h1>
+    <p class="creditRole">Autor del tutorial</p>
+
+    <div class="clockBox">
+      30/09/2026 — 16:29:33
+    </div>
+  </div>
+
+  <div class="grid two" style="margin-top:2rem;">
+    <div class="card accent">
+      <h4>📖 Sobre este tutorial</h4>
+      <p>Tutorial interactivo construido a partir de la <strong>«Guía de Prompts para Clonar Páginas Web con IA»</strong>, transformado en una aplicación web educativa autocontenida.</p>
+      <p>Incluye navegación por pestañas, buscador interno, botones de copiado de prompts, modo claro/oscuro, control de tamaño de texto, impresión a PDF, checklist con progreso guardado y animaciones SVG explicativas.</p>
+    </div>
+    <div class="card accent">
+      <h4>⚙️ Ficha técnica</h4>
+      <ul>
+        <li><strong>Formato:</strong> un único archivo HTML</li>
+        <li><strong>Dependencias externas:</strong> ninguna</li>
+        <li><strong>Funciona sin conexión:</strong> sí</li>
+        <li><strong>Diseño:</strong> responsive, mobile-first</li>
+        <li><strong>Tecnologías:</strong> HTML + CSS + JavaScript + SVG nativos</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="text-align:center;margin-top:1.5rem;">
+    <p style="font-size:1.05rem;"><strong>Gracias por completar el tutorial.</strong></p>
+    <p class="lead" style="margin-bottom:0;">Ahora ya sabes convertir una captura de pantalla en una web funcional, con tres métodos distintos y un criterio claro para elegir el adecuado.</p>
+  </div>
+
+</section>
+
+</main>
+
+<footer>
+  <p><strong>Clonar Páginas Web con IA</strong> — Tutorial interactivo</p>
+  <p>Basado en la «Guía de Prompts para Clonar Páginas Web con IA» de Rubén Sbarsky</p>
+  <p style="margin-top:.4rem;opacity:.7;">Inspírate, no copies. 🌱</p>
+</footer>
+
+<button id="backTop" title="Volver arriba">↑</button>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ==========================================================
+     1. PESTAÑAS
+     ========================================================== */
+  var tabBtns = document.querySelectorAll('.tabBtn');
+  var panels  = document.querySelectorAll('.panel');
+
+  function activateTab(id){
+    panels.forEach(function(p){ p.classList.toggle('active', p.id === id); });
+    tabBtns.forEach(function(b){ b.classList.toggle('active', b.dataset.tab === id); });
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  tabBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){ activateTab(btn.dataset.tab); });
+  });
+
+  /* ==========================================================
+     2. PROGRESO DE SCROLL
+     ========================================================== */
+  var fill = document.getElementById('progressFill');
+  var backTop = document.getElementById('backTop');
+
+  function onScroll(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    var pct = max > 0 ? (h.scrollTop / max) * 100 : 0;
+    fill.style.width = pct + '%';
+    if(h.scrollTop > 400){ backTop.classList.add('show'); }
+    else{ backTop.classList.remove('show'); }
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+
+  backTop.addEventListener('click', function(){
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+
+  /* ==========================================================
+     3. TEMA CLARO / OSCURO
+     ========================================================== */
+  var themeBtn = document.getElementById('themeBtn');
+
+  function applyTheme(light){
+    document.body.classList.toggle('light', light);
+    themeBtn.textContent = light ? '☀️' : '🌙';
+  }
+
+  var savedTheme = null;
+  try{ savedTheme = localStorage.getItem('tut_theme'); }catch(e){}
+  applyTheme(savedTheme === 'light');
+
+  themeBtn.addEventListener('click', function(){
+    var isLight = !document.body.classList.contains('light');
+    applyTheme(isLight);
+    try{ localStorage.setItem('tut_theme', isLight ? 'light' : 'dark'); }catch(e){}
+  });
+
+  /* ==========================================================
+     4. TAMAÑO DE TEXTO
+     ========================================================== */
+  var rootHtml = document.documentElement;
+  var fontSize = 16;
+  var MIN_FS = 13, MAX_FS = 22;
+
+  try{
+    var savedFs = parseFloat(localStorage.getItem('tut_fs'));
+    if(!isNaN(savedFs)) fontSize = Math.min(MAX_FS, Math.max(MIN_FS, savedFs));
+  }catch(e){}
+  rootHtml.style.fontSize = fontSize + 'px';
+
+  function setFontSize(v){
+    fontSize = Math.min(MAX_FS, Math.max(MIN_FS, v));
+    rootHtml.style.fontSize = fontSize + 'px';
+    try{ localStorage.setItem('tut_fs', String(fontSize)); }catch(e){}
+  }
+
+  document.getElementById('fontPlus').addEventListener('click', function(){ setFontSize(fontSize + 1); });
+  document.getElementById('fontMinus').addEventListener('click', function(){ setFontSize(fontSize - 1); });
+
+  /* ==========================================================
+     5. IMPRIMIR / PDF
+     ========================================================== */
+  document.getElementById('printBtn').addEventListener('click', function(){
+    window.print();
+  });
+
+  /* ==========================================================
+     6. PORTAPAPELES ROBUSTO (moderno + legacy fallback)
+     ========================================================== */
+  function legacyCopy(text){
+    return new Promise(function(resolve, reject){
+      var ta = null;
+      var prevActive = null;
+      try{
+        prevActive = document.activeElement;
+
+        ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.setAttribute('aria-hidden', 'true');
+        ta.style.position = 'fixed';
+        ta.style.top = '0';
+        ta.style.left = '-9999px';
+        ta.style.width = '2em';
+        ta.style.height = '2em';
+        ta.style.padding = '0';
+        ta.style.border = 'none';
+        ta.style.outline = 'none';
+        ta.style.boxShadow = 'none';
+        ta.style.background = 'transparent';
+
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try{ ta.setSelectionRange(0, ta.value.length); }catch(_e){}
+
+        var ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        ta = null;
+
+        if(prevActive && typeof prevActive.focus === 'function'){
+          try{ prevActive.focus(); }catch(_e){}
+        }
+
+        ok ? resolve() : reject(new Error('execCommand("copy") devolvió false'));
+      }catch(err){
+        if(ta && ta.parentNode){ try{ ta.parentNode.removeChild(ta); }catch(_e){} }
+        reject(err);
+      }
+    });
+  }
+
+  function copyText(text){
+    if(navigator.clipboard
+       && window.isSecureContext
+       && typeof navigator.clipboard.writeText === 'function'){
+      return navigator.clipboard.writeText(text).catch(function(){
+        return legacyCopy(text);
+      });
+    }
+    return legacyCopy(text);
+  }
+
+  /* ==========================================================
+     7. BOTONES COPIAR (un único manejador para todos los .copyBtn)
+     ========================================================== */
+  document.querySelectorAll('.copyBtn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var box = btn.closest('.promptBox');
+      if(!box) return;
+      var body = box.querySelector('.promptBody');
+      if(!body) return;
+
+      copyText(body.textContent).then(function(){
+        var original = btn.textContent;
+        btn.textContent = '✓ COPIADO';
+        btn.classList.add('done');
+        setTimeout(function(){
+          btn.textContent = original;
+          btn.classList.remove('done');
+        }, 1800);
+      }).catch(function(){
+        // Fallback visual: seleccionar el texto del prompt como último recurso
+        try{
+          var range = document.createRange();
+          range.selectNodeContents(body);
+          var sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }catch(e){}
+        var original = btn.textContent;
+        btn.textContent = 'SELECCIONA Y COPIA';
+        setTimeout(function(){ btn.textContent = original; }, 2200);
+      });
+    });
+  });
+
+  /* ==========================================================
+     8. CHECKLIST CON LOCALSTORAGE
+     ========================================================== */
+  var checkBoxes = document.querySelectorAll('#checklist input[type="checkbox"]');
+  var checkCount = document.getElementById('checkCount');
+  var miniFill = document.getElementById('miniBarFill');
+
+  function updateChecklist(){
+    var total = checkBoxes.length;
+    var done = 0;
+    checkBoxes.forEach(function(cb){
+      var item = cb.closest('.checkItem');
+      if(cb.checked){ done++; if(item) item.classList.add('done'); }
+      else{ if(item) item.classList.remove('done'); }
+    });
+    checkCount.textContent = done + ' / ' + total + ' completado' + (done === 1 ? '' : 's');
+    miniFill.style.width = (total ? (done / total) * 100 : 0) + '%';
+  }
+
+  checkBoxes.forEach(function(cb){
+    var key = cb.dataset.check;
+    // Cargar estado
+    try{
+      if(localStorage.getItem('tut_chk_' + key) === '1'){ cb.checked = true; }
+    }catch(e){}
+    // Guardar estado
+    cb.addEventListener('change', function(){
+      try{ localStorage.setItem('tut_chk_' + key, cb.checked ? '1' : '0'); }catch(e){}
+      updateChecklist();
+    });
+  });
+  updateChecklist();
+
+  /* ==========================================================
+     9. BUSCADOR
+     ========================================================== */
+  var searchInput = document.getElementById('searchInput');
+  var searchResults = document.getElementById('searchResults');
+
+  // Recolectar todos los elementos buscables dentro de los paneles
+  var searchable = [];
+  document.querySelectorAll('.panel').forEach(function(panel){
+    var tabId = panel.id;
+    var tabLabel = tabId.toUpperCase();
+    panel.querySelectorAll('h2, h3, h4, p, li, td, summary, .stepTitle, .promptTitle').forEach(function(el){
+      var txt = (el.textContent || '').replace(/\s+/g, ' ').trim();
+      if(txt.length > 4){
+        searchable.push({el: el, text: txt, tab: tabId, tabLabel: tabLabel});
+      }
+    });
+  });
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function escapeRegex(s){
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function doSearch(q){
+    searchResults.innerHTML = '';
+    if(q.length < 2){
+      searchResults.classList.remove('show');
+      return;
+    }
+
+    var re = new RegExp(escapeRegex(q), 'gi');
+    var matches = [];
+
+    for(var i = 0; i < searchable.length && matches.length < 25; i++){
+      var item = searchable[i];
+      if(re.test(item.text)){
+        // Evitar duplicados del mismo elemento
+        if(matches.indexOf(item.el) === -1){
+          matches.push(item.el);
+        }
+      }
+      re.lastIndex = 0;
+    }
+
+    if(matches.length === 0){
+      searchResults.innerHTML = '<div class="srEmpty">No se encontraron resultados para «' + escapeHtml(q) + '».</div>';
+      searchResults.classList.add('show');
+      return;
+    }
+
+    matches.forEach(function(el){
+      var panel = el.closest('.panel');
+      var tabLabel = panel ? panel.id.toUpperCase() : '';
+      var raw = (el.textContent || '').replace(/\s+/g, ' ').trim();
+      var idx = raw.toLowerCase().indexOf(q.toLowerCase());
+      var start = Math.max(0, idx - 45);
+      var snippet = (start > 0 ? '…' : '') + raw.slice(start, start + 150) + (raw.length > start + 150 ? '…' : '');
+
+      var highlighted = escapeHtml(snippet).replace(
+        new RegExp(escapeRegex(escapeHtml(q)), 'gi'),
+        function(m){ return '<mark>' + m + '</mark>'; }
+      );
+
+      var div = document.createElement('div');
+      div.className = 'srItem';
+      div.innerHTML = '<div class="srTab">' + escapeHtml(tabLabel) + '</div><div class="srTxt">' + highlighted + '</div>';
+
+      div.addEventListener('click', function(){
+        // Activar la pestaña correcta
+        activateTab(panel.id);
+
+        // Esperar a que el panel se muestre antes de hacer scroll
+        setTimeout(function(){
+          try{
+            el.scrollIntoView({behavior:'smooth', block:'center'});
+          }catch(e){
+            el.scrollIntoView();
+          }
+          el.classList.add('searchHit');
+          setTimeout(function(){ el.classList.remove('searchHit'); }, 2100);
+        }, 350);
+
+        searchResults.classList.remove('show');
+        searchInput.value = '';
+      });
+
+      searchResults.appendChild(div);
+    });
+
+    searchResults.classList.add('show');
+  }
+
+  var searchTimer = null;
+  searchInput.addEventListener('input', function(){
+    clearTimeout(searchTimer);
+    var q = searchInput.value.trim();
+    searchTimer = setTimeout(function(){ doSearch(q); }, 200);
+  });
+
+  searchInput.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+      searchInput.value = '';
+      searchResults.classList.remove('show');
+    }
+  });
+
+  document.addEventListener('click', function(e){
+    if(!e.target.closest('.searchWrap')){
+      searchResults.classList.remove('show');
+    }
+  });
+
+  /* ==========================================================
+     10. ATAJOS DE TECLADO (1-9 para las pestañas)
+     ========================================================== */
+  document.addEventListener('keydown', function(e){
+    if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    var n = parseInt(e.key, 10);
+    if(n >= 1 && n <= tabBtns.length){
+      activateTab(tabBtns[n - 1].dataset.tab);
+    }
+  });
+
+})();
+</script>
+</body>
+</html>
